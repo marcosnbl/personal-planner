@@ -1,1 +1,22 @@
-.weekly-discipline-breakdown{display:flex;flex-wrap:wrap;align-items:center;gap:7px;margin-top:5px;color:#91a09a;font-size:10px}.weekly-discipline-breakdown span{display:inline-flex;align-items:center;gap:6px}.weekly-discipline-breakdown b{color:#dce8dc;font-weight:600}.weekly-discipline-breakdown i{font-style:normal;color:#55645b}
+.weekly-discipline-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 5px;
+  color: #91a09a;
+  font-size: 10px;
+}
+.weekly-discipline-breakdown span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.weekly-discipline-breakdown b {
+  color: #dce8dc;
+  font-weight: 600;
+}
+.weekly-discipline-breakdown i {
+  font-style: normal;
+  color: #55645b;
+}
