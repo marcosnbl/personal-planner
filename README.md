@@ -5,6 +5,7 @@ Aplicación web para organizar entrenamientos semanales, registrar sesiones real
 ## Funciones
 
 - Plan semanal de lunes a domingo con navegación entre semanas.
+- Alta de entrenamientos con fecha libre, pasada o futura.
 - Registro de sesiones de Running, Ciclismo, Natación, Fuerza, Movilidad y Descanso.
 - Título personalizado para cada entrenamiento, por ejemplo *Long Run* o *Rodaje suave*.
 - Estados de sesión: planificada, completada o saltada.
@@ -12,6 +13,7 @@ Aplicación web para organizar entrenamientos semanales, registrar sesiones real
 - Tiempo ingresable en minutos (`90`) o en formato `HH:MM:SS` (`1:30:00`).
 - Resumen semanal con kilómetros realizados y desglose por Running, Ciclismo y Natación cuando hay distancia registrada.
 - Historial gráfico de kilómetros de las últimas 12 semanas.
+- Tema claro u oscuro, con preferencia guardada en el navegador.
 - Exportación e importación de respaldos en JSON y exportación CSV.
 
 ## Requisitos

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import "./overrides.css";
 import "./discipline-summary.css";
+import "./theme.css";
 
 export const metadata: Metadata = {
   title: "Training planner — Entrenamiento semanal",
