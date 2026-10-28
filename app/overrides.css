@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap");
 .week-picker {
   position: relative;
   overflow: hidden;
 }
-.week-picker input[type=date] {
+.week-picker input[type="date"] {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -23,15 +23,18 @@
   font: inherit;
   text-align: left;
 }
-.field>input,.field>select {
+.field > input,
+.field > select {
   height: 37px;
   padding: 0 10px;
 }
-.field>input,.field>select,.field textarea {
+.field > input,
+.field > select,
+.field textarea {
   font-size: 11px;
   letter-spacing: 0;
 }
-.field>select option {
+.field > select option {
   background: #16212c;
   color: #eaf0ee;
 }
@@ -53,18 +56,26 @@
   flex: 1;
   width: 0;
 }
-.input-wrap>span {
+.input-wrap > span {
   font-size: 8px;
 }
 .brand {
   font-size: 19px;
-  letter-spacing: -.8px;
+  letter-spacing: -0.8px;
   white-space: nowrap;
 }
 .mobile-brand {
   font-size: 14px;
-  letter-spacing: -.5px;
+  letter-spacing: -0.5px;
   white-space: nowrap;
 }
 
-.brand-mark svg{width:19px;height:19px;display:block}.mobile-brand .brand-mark svg{width:16px;height:16px}
+.brand-mark svg {
+  width: 19px;
+  height: 19px;
+  display: block;
+}
+.mobile-brand .brand-mark svg {
+  width: 16px;
+  height: 16px;
+}

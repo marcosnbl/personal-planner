@@ -9,6 +9,12 @@ export const metadata: Metadata = {
   description: "Planifica y registra tus entrenamientos semanales.",
 };
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="es"><body>{children}</body></html>;
+export default function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html lang="es">
+      <body>{children}</body>
+    </html>
+  );
 }

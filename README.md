@@ -7,7 +7,7 @@ Aplicación web para organizar entrenamientos semanales, registrar sesiones real
 - Plan semanal de lunes a domingo con navegación entre semanas.
 - Alta de entrenamientos con fecha libre, pasada o futura.
 - Registro de sesiones de Running, Ciclismo, Natación, Fuerza, Movilidad y Descanso.
-- Título personalizado para cada entrenamiento, por ejemplo *Long Run* o *Rodaje suave*.
+- Título personalizado para cada entrenamiento, por ejemplo _Long Run_ o _Rodaje suave_.
 - Estados de sesión: planificada, completada o saltada.
 - Métricas planificadas y realizadas: distancia, tiempo y desnivel positivo.
 - Tiempo ingresable en minutos (`90`) o en formato `HH:MM:SS` (`1:30:00`).
