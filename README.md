@@ -16,8 +16,7 @@ Aplicación web para organizar entrenamientos semanales, registrar sesiones real
 - Tema claro u oscuro, con preferencia guardada en el navegador.
 - Exportación e importación de respaldos en JSON y exportación CSV.
 
-
 ## Datos y privacidad
 
-Los entrenamientos se guardan en `localStorage` bajo la clave `stride.training.v1`. Permanecen en el mismo navegador y dispositivo; no hay cuenta, base de datos remota ni sincronización entre dispositivos. Para migrar o respaldar datos, usá **Configuración → Exportar JSON**. 
+Los entrenamientos se guardan en `localStorage` bajo la clave `stride.training.v1`. Permanecen en el mismo navegador y dispositivo; no hay cuenta, base de datos remota ni sincronización entre dispositivos. Para migrar o respaldar datos, usá **Configuración → Exportar JSON**.
 El formato de respaldo JSON está versionado y contiene `{ version, workouts }`. Cada sesión incluye fecha, disciplina, estado, título y métricas planificadas y realizadas.

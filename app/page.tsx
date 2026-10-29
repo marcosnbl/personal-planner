@@ -580,6 +580,22 @@ export default function HomePage() {
           </div>
           <div className="top-actions">
             <button
+              type="button"
+              className="icon-button header-theme-toggle"
+              onClick={() =>
+                setTheme((current) => (current === "light" ? "dark" : "light"))
+              }
+              aria-label={
+                theme === "light" ? "Activar modo oscuro" : "Activar modo claro"
+              }
+              aria-pressed={theme === "dark"}
+              title={
+                theme === "light" ? "Activar modo oscuro" : "Activar modo claro"
+              }
+            >
+              <span aria-hidden="true">{theme === "light" ? "☾" : "☀"}</span>
+            </button>
+            <button
               className="today-link"
               onClick={() => setWeekStart(mondayOf(new Date()))}
             >
