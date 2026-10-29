@@ -59,6 +59,7 @@ const plusDays = (date: Date, count: number) => {
   d.setDate(d.getDate() + count);
   return d;
 };
+
 const weekDays = (start: Date) => WEEKDAYS.map((_, i) => plusDays(start, i));
 const makeId = () =>
   globalThis.crypto?.randomUUID?.() ??
@@ -137,12 +138,14 @@ export default function HomePage() {
   const [rpe, setRpe] = useState(5);
   const [status, setStatus] = useState<Status>("planned");
   const [toast, setToast] = useState("");
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dropDate, setDropDate] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const [theme, setTheme] = useState<ThemeMode>("dark");
+  const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
-    const initialTheme: ThemeMode = savedTheme === "light" ? "light" : "dark";
+    const initialTheme: ThemeMode = savedTheme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = initialTheme;
     setTheme(initialTheme);
     try {
@@ -245,6 +248,25 @@ export default function HomePage() {
 
   function notify(message: string) {
     setToast(message);
+  }
+  function moveWorkout(id: string, destination: string) {
+    const workout = workouts.find((session) => session.id === id);
+    if (!workout || workout.date === destination) return;
+    const occupied = workouts.some((session) => session.date === destination);
+    setWorkouts((current) =>
+      current.map((session) =>
+        session.id === id
+          ? { ...session, date: destination }
+          : session.date === destination
+            ? { ...session, date: workout.date }
+            : session,
+      ),
+    );
+    notify(
+      occupied
+        ? "Sesiones intercambiadas. Se conservaron todos sus datos."
+        : "Entrenamiento movido. Se conservaron todos sus datos.",
+    );
   }
   function openWorkout(date = dateKey(new Date()), createNew = false) {
     const workout = createNew
@@ -744,7 +766,10 @@ export default function HomePage() {
                     SEMANA {String(weekNumber(weekStart)).padStart(2, "0")}
                   </span>
                 </div>
-                <p>Organiza tus sesiones y registra cómo te sentiste.</p>
+                <p>
+                  Arrastrá para mover una sesión. Si el día está ocupado, se
+                  intercambian las fechas.
+                </p>
               </div>
               <div className="filters">
                 <label className="filter-select">
@@ -791,7 +816,46 @@ export default function HomePage() {
                   return (
                     <article
                       key={dateKey(date)}
-                      className={`day-card ${today ? "today" : ""} ${done ? "completed" : ""}`}
+                      className={`day-card ${today ? "today" : ""} ${done ? "completed" : ""} ${draggedId === workout?.id ? "dragging" : ""} ${dropDate === dateKey(date) ? "drop-target" : ""}`}
+                      draggable={Boolean(workout)}
+                      onDragStart={(event) => {
+                        if (!workout) return;
+                        event.dataTransfer.setData(
+                          "application/x-training-planner",
+                          workout.id,
+                        );
+                        event.dataTransfer.effectAllowed = "move";
+                        setDraggedId(workout.id);
+                      }}
+                      onDragOver={(event) => {
+                        if (!draggedId) return;
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = "move";
+                        setDropDate(dateKey(date));
+                      }}
+                      onDragLeave={(event) => {
+                        if (
+                          !event.currentTarget.contains(
+                            event.relatedTarget as Node | null,
+                          )
+                        )
+                          setDropDate(null);
+                      }}
+                      onDrop={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        const id = event.dataTransfer.getData(
+                          "application/x-training-planner",
+                        );
+                        if (id && id === draggedId)
+                          moveWorkout(id, dateKey(date));
+                        setDraggedId(null);
+                        setDropDate(null);
+                      }}
+                      onDragEnd={() => {
+                        setDraggedId(null);
+                        setDropDate(null);
+                      }}
                       style={{ animationDelay: `${i * 35}ms` }}
                       onClick={() => openWorkout(dateKey(date))}
                     >
