@@ -1,6 +1,13 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useMemo, useState } from "react";
+import {
+  ChangeEvent,
+  FormEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
 type Discipline = "run" | "strength" | "swim" | "rest" | "bike" | "mobility";
 type Status = "planned" | "completed" | "skipped";
@@ -140,6 +147,33 @@ export default function HomePage() {
   const [toast, setToast] = useState("");
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dropDate, setDropDate] = useState<string | null>(null);
+  const pointerDrag = useRef<{
+    id: string;
+    pointerId: number;
+    x: number;
+    y: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!draggedId || !pointerDrag.current) return;
+    let frame: number;
+    const update = () => {
+      const drag = pointerDrag.current;
+      if (!drag) return;
+      // Keep distant calendar days reachable while holding a touch drag.
+      const edge = 72;
+      const scroll =
+        drag.y < edge ? -12 : drag.y > window.innerHeight - edge ? 12 : 0;
+      if (scroll) window.scrollBy(0, scroll);
+      const target = document
+        .elementFromPoint(drag.x, drag.y)
+        ?.closest<HTMLElement>("[data-workout-date]");
+      setDropDate(target?.dataset.workoutDate ?? null);
+      frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [draggedId]);
   const [hydrated, setHydrated] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("light");
 
@@ -832,6 +866,7 @@ export default function HomePage() {
                   return (
                     <article
                       key={dateKey(date)}
+                      data-workout-date={dateKey(date)}
                       className={`day-card ${today ? "today" : ""} ${done ? "completed" : ""} ${draggedId === workout?.id ? "dragging" : ""} ${dropDate === dateKey(date) ? "drop-target" : ""}`}
                       draggable={Boolean(workout)}
                       onDragStart={(event) => {
@@ -877,6 +912,71 @@ export default function HomePage() {
                     >
                       <div className="day-top">
                         <span className="day-name">{SHORT_DAYS[index]}</span>
+                        {workout && (
+                          <button
+                            type="button"
+                            className="drag-handle"
+                            aria-label={`Mover ${workout.title || info.label}. Arrastrá a otro día; también podés editar la fecha abriendo la sesión.`}
+                            title="Arrastrar a otro día"
+                            onClick={(event) => event.stopPropagation()}
+                            onDragStart={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                            onPointerDown={(event) => {
+                              if (!event.isPrimary || event.button !== 0)
+                                return;
+                              event.preventDefault();
+                              event.stopPropagation();
+                              event.currentTarget.setPointerCapture(
+                                event.pointerId,
+                              );
+                              pointerDrag.current = {
+                                id: workout.id,
+                                pointerId: event.pointerId,
+                                x: event.clientX,
+                                y: event.clientY,
+                              };
+                              setDraggedId(workout.id);
+                            }}
+                            onPointerMove={(event) => {
+                              const drag = pointerDrag.current;
+                              if (!drag || drag.pointerId !== event.pointerId)
+                                return;
+                              drag.x = event.clientX;
+                              drag.y = event.clientY;
+                            }}
+                            onPointerUp={(event) => {
+                              const drag = pointerDrag.current;
+                              if (!drag || drag.pointerId !== event.pointerId)
+                                return;
+                              event.stopPropagation();
+                              const target = document
+                                .elementFromPoint(event.clientX, event.clientY)
+                                ?.closest<HTMLElement>("[data-workout-date]");
+                              pointerDrag.current = null;
+                              setDraggedId(null);
+                              setDropDate(null);
+                              if (target?.dataset.workoutDate)
+                                moveWorkout(
+                                  drag.id,
+                                  target.dataset.workoutDate,
+                                );
+                            }}
+                            onPointerCancel={() => {
+                              pointerDrag.current = null;
+                              setDraggedId(null);
+                              setDropDate(null);
+                            }}
+                            onLostPointerCapture={() => {
+                              pointerDrag.current = null;
+                              setDraggedId(null);
+                              setDropDate(null);
+                            }}
+                          >
+                            <span aria-hidden="true">⠿</span>
+                          </button>
+                        )}
                         <span className="day-number">{date.getDate()}</span>
                       </div>
                       {today && <span className="today-tag">HOY</span>}

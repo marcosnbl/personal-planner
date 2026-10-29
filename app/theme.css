@@ -461,3 +461,39 @@ html[data-theme="dark"] {
     height: 34px;
   }
 }
+
+:root .drag-handle {
+  display: none;
+  place-items: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin-left: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 20px;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+@media (hover: none) and (pointer: coarse) {
+  :root .drag-handle {
+    display: inline-grid;
+  }
+  :root .day-top {
+    min-height: 44px;
+    gap: 8px;
+  }
+  :root .day-number {
+    flex-shrink: 0;
+  }
+}
+:root .drag-handle:active {
+  cursor: grabbing;
+  background: var(--card-hi);
+}
+:root .day-card.dragging {
+  user-select: none;
+}
