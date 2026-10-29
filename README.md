@@ -16,42 +16,8 @@ Aplicación web para organizar entrenamientos semanales, registrar sesiones real
 - Tema claro u oscuro, con preferencia guardada en el navegador.
 - Exportación e importación de respaldos en JSON y exportación CSV.
 
-## Requisitos
-
-- Node.js 20.9 o superior
-- npm
-
-## Ejecutar en desarrollo
-
-```bash
-npm install
-npm run dev
-```
-
-Abrí [http://localhost:3000](http://localhost:3000).
-
-## Compilar y ejecutar en producción
-
-```bash
-npm run build
-npm run start
-```
-
-## Despliegue
-
-Se puede importar el repositorio directamente en [Vercel](https://vercel.com/new), que detecta Next.js y puede volver a desplegar la app cuando se actualiza la rama conectada. También se puede desplegar como servicio Node en otros proveedores compatibles con Next.js.
 
 ## Datos y privacidad
 
-Los entrenamientos se guardan en `localStorage` bajo la clave `stride.training.v1`. Permanecen en el mismo navegador y dispositivo; no hay cuenta, base de datos remota ni sincronización entre dispositivos. Para migrar o respaldar datos, usá **Configuración → Exportar JSON**. Para sincronización en la nube se deberá integrar autenticación y una base de datos, por ejemplo Supabase.
-
+Los entrenamientos se guardan en `localStorage` bajo la clave `stride.training.v1`. Permanecen en el mismo navegador y dispositivo; no hay cuenta, base de datos remota ni sincronización entre dispositivos. Para migrar o respaldar datos, usá **Configuración → Exportar JSON**. 
 El formato de respaldo JSON está versionado y contiene `{ version, workouts }`. Cada sesión incluye fecha, disciplina, estado, título y métricas planificadas y realizadas.
-
-## Estructura del proyecto
-
-- `app/page.tsx`: dashboard, formularios, estadísticas y persistencia del lado del cliente.
-- `app/layout.tsx`: layout raíz y metadatos de la página.
-- `app/globals.css`: estilos globales y responsive.
-- `app/overrides.css`: ajustes visuales adicionales.
-- `app/discipline-summary.css`: estilos del resumen por disciplina.
-- `next.config.ts`: configuración de Next.js.
