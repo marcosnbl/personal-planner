@@ -1,209 +1,63 @@
 "use client";
 
+import { ChangeEvent, useEffect, useMemo, useState } from "react";
+
 import {
-  ChangeEvent,
-  FormEvent,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+  ThemeMode,
+  Workout,
+  THEME_KEY,
+  TYPE_INFO,
+  DISCIPLINES,
+  dateKey,
+  mondayOf,
+  monthShort,
+  plusDays,
+  weekDays,
+  weekNumber,
+  emptyWorkout,
+} from "@/lib/training";
 
-type Discipline = "run" | "strength" | "swim" | "rest" | "bike" | "mobility";
-type Status = "planned" | "completed" | "skipped";
-type ThemeMode = "light" | "dark";
-type Workout = {
-  id: string;
-  date: string;
-  type: Discipline;
-  title?: string;
-  status: Status;
-  plannedDistance: number;
-  actualDistance: number;
-  plannedDuration: number;
-  actualDuration: number;
-  plannedElevation: number;
-  actualElevation: number;
-  rpe?: number;
-  gear?: string;
-  notes?: string;
-};
-type StoredData = { version: number; target?: number; workouts: Workout[] };
-const STORAGE_KEY = "stride.training.v1";
-const THEME_KEY = "training-planner.theme.v1";
-const TYPE_INFO: Record<
-  Discipline,
-  { label: string; icon: string; badge: string }
-> = {
-  run: { label: "Running", icon: "↗", badge: "badge-run" },
-  strength: { label: "Fuerza / Gimnasio", icon: "✳", badge: "badge-strength" },
-  swim: { label: "Natación", icon: "≈", badge: "badge-swim" },
-  rest: { label: "Descanso", icon: "☾", badge: "badge-rest" },
-  bike: { label: "Ciclismo", icon: "⌁", badge: "badge-bike" },
-  mobility: { label: "Movilidad", icon: "◎", badge: "badge-mobility" },
-};
-const WEEKDAYS = [
-  "Lunes",
-  "Martes",
-  "Miércoles",
-  "Jueves",
-  "Viernes",
-  "Sábado",
-  "Domingo",
-];
-const SHORT_DAYS = ["LUN", "MAR", "MIÉ", "JUE", "VIE", "SÁB", "DOM"];
-const DISCIPLINES = Object.keys(TYPE_INFO) as Discipline[];
-const dateKey = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-const mondayOf = (date: Date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0);
-  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
-  return d;
-};
-const plusDays = (date: Date, count: number) => {
-  const d = new Date(date);
-  d.setDate(d.getDate() + count);
-  return d;
-};
-
-const weekDays = (start: Date) => WEEKDAYS.map((_, i) => plusDays(start, i));
-const makeId = () =>
-  globalThis.crypto?.randomUUID?.() ??
-  `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-const fmtMinutes = (minutes: number) => {
-  const rounded = Math.round(minutes),
-    h = Math.floor(rounded / 60),
-    m = rounded % 60;
-  return h ? `${h}h ${String(m).padStart(2, "0")}m` : `${m} min`;
-};
-function parseDuration(value: string): number | null {
-  const input = value.trim();
-  if (!input) return 0;
-  if (!input.includes(":")) {
-    const minutes = Number(input);
-    return Number.isFinite(minutes) && minutes >= 0 ? minutes : null;
-  }
-  const parts = input.split(":");
-  if (
-    (parts.length !== 2 && parts.length !== 3) ||
-    parts.some((part) => !/^\d+$/.test(part))
-  )
-    return null;
-  const hours = Number(parts[0]),
-    minutes = Number(parts[1]),
-    seconds = parts.length === 3 ? Number(parts[2]) : 0;
-  if (minutes > 59 || seconds > 59) return null;
-  return hours * 60 + minutes + seconds / 60;
-}
-const monthShort = (d: Date) =>
-  d.toLocaleDateString("es-AR", { month: "short" }).replace(".", "");
-function weekNumber(date: Date) {
-  const d = new Date(
-    Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()),
-  );
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const y = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil(((d.getTime() - y.getTime()) / 86400000 + 1) / 7);
-}
-function emptyWorkout(date: string, type: Discipline = "run"): Workout {
-  return {
-    id: makeId(),
-    date,
-    type,
-    status: "planned",
-    plannedDistance: 0,
-    actualDistance: 0,
-    plannedDuration: 0,
-    actualDuration: 0,
-    plannedElevation: 0,
-    actualElevation: 0,
-    rpe: 5,
-  };
-}
-
+import { InstallApp } from "@/components/install-app";
+import { PlanningTools } from "@/components/planning-tools";
+import { TrainingStatistics } from "@/components/training-statistics";
+import { TrainingCalendar } from "@/components/training-calendar";
+import { MoveDialog } from "@/components/move-dialog";
+import { WorkoutEditor } from "@/components/workout-editor";
+import { useTrainingStore } from "@/hooks/use-training-store";
+import { copyWeek, plannedCopy, parseBackup, relocate } from "@/lib/training";
 export default function HomePage() {
-  const [workouts, setWorkouts] = useState<Workout[]>([]);
+  const {
+    workouts,
+    setWorkouts,
+    templates,
+    setTemplates,
+    hydrated,
+    error: storageError,
+    canUndo,
+    undo,
+    allowSave,
+  } = useTrainingStore();
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [view, setView] = useState<"week" | "stats">("week");
   const [layout, setLayout] = useState<"grid" | "list">("grid");
   const [filter, setFilter] = useState("all");
   const [modal, setModal] = useState<"workout" | "settings" | null>(null);
-  const [editingId, setEditingId] = useState("");
-  const [formDate, setFormDate] = useState("");
-  const [type, setType] = useState<Discipline>("run");
-  const [workoutTitle, setWorkoutTitle] = useState("");
-  const [mode, setMode] = useState<"plan" | "log">("plan");
-  const [plannedDistance, setPlannedDistance] = useState("");
-  const [actualDistance, setActualDistance] = useState("");
-  const [plannedDuration, setPlannedDuration] = useState("");
-  const [actualDuration, setActualDuration] = useState("");
-  const [plannedElevation, setPlannedElevation] = useState("");
-  const [actualElevation, setActualElevation] = useState("");
-  const [gear, setGear] = useState("");
-  const [notes, setNotes] = useState("");
-  const [rpe, setRpe] = useState(5);
-  const [status, setStatus] = useState<Status>("planned");
+  const [templateSource, setTemplateSource] = useState<Workout | null>(null);
+  const [editor, setEditor] = useState<Workout | null>(null);
   const [toast, setToast] = useState("");
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-  const [dropDate, setDropDate] = useState<string | null>(null);
-  const pointerDrag = useRef<{
+  const [pendingMove, setPendingMove] = useState<{
     id: string;
-    pointerId: number;
-    x: number;
-    y: number;
+    date?: string;
   } | null>(null);
-
-  useEffect(() => {
-    if (!draggedId || !pointerDrag.current) return;
-    let frame: number;
-    const update = () => {
-      const drag = pointerDrag.current;
-      if (!drag) return;
-      // Keep distant calendar days reachable while holding a touch drag.
-      const edge = 72;
-      const scroll =
-        drag.y < edge ? -12 : drag.y > window.innerHeight - edge ? 12 : 0;
-      if (scroll) window.scrollBy(0, scroll);
-      const target = document
-        .elementFromPoint(drag.x, drag.y)
-        ?.closest<HTMLElement>("[data-workout-date]");
-      setDropDate(target?.dataset.workoutDate ?? null);
-      frame = requestAnimationFrame(update);
-    };
-    frame = requestAnimationFrame(update);
-    return () => cancelAnimationFrame(frame);
-  }, [draggedId]);
-  const [hydrated, setHydrated] = useState(false);
   const [theme, setTheme] = useState<ThemeMode>("light");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(THEME_KEY);
     const initialTheme: ThemeMode = savedTheme === "dark" ? "dark" : "light";
     document.documentElement.dataset.theme = initialTheme;
+    // Hydrate the saved browser preference after the server render.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initialTheme);
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-      if (Array.isArray(saved.workouts))
-        setWorkouts(
-          saved.workouts.map((workout: Workout) =>
-            workout.status === "completed"
-              ? {
-                  ...workout,
-                  actualDistance:
-                    workout.actualDistance || workout.plannedDistance,
-                  actualDuration:
-                    workout.actualDuration || workout.plannedDuration,
-                  actualElevation:
-                    workout.actualElevation || workout.plannedElevation,
-                }
-              : workout,
-          ),
-        );
-    } catch {
-      /* Ignore malformed local data and start clean. */
-    }
-    setHydrated(true);
   }, []);
   useEffect(() => {
     if (!hydrated) return;
@@ -211,34 +65,22 @@ export default function HomePage() {
     localStorage.setItem(THEME_KEY, theme);
   }, [hydrated, theme]);
   useEffect(() => {
-    if (hydrated)
-      localStorage.setItem(
-        STORAGE_KEY,
-        JSON.stringify({ version: 1, workouts } satisfies StoredData),
-      );
-  }, [hydrated, workouts]);
-  useEffect(() => {
     if (!toast) return;
     const timer = window.setTimeout(() => setToast(""), 2400);
     return () => window.clearTimeout(timer);
   }, [toast]);
   useEffect(() => {
-    document.body.style.overflow = modal ? "hidden" : "";
+    document.body.style.overflow =
+      modal || editor || pendingMove || templateSource ? "hidden" : "";
     return () => {
       document.body.style.overflow = "";
     };
-  }, [modal]);
+  }, [modal, editor, pendingMove, templateSource]);
 
   const dates = useMemo(() => weekDays(weekStart), [weekStart]);
   const todayKey = dateKey(new Date());
   const currentDateInWeek = dates.find((date) => dateKey(date) === todayKey);
-  const firstFreeDate = dates.find(
-    (date) => !workouts.some((workout) => workout.date === dateKey(date)),
-  );
-  const defaultNewWorkoutDate =
-    currentDateInWeek && !workouts.some((workout) => workout.date === todayKey)
-      ? todayKey
-      : dateKey(firstFreeDate ?? currentDateInWeek ?? dates[0]);
+  const defaultNewWorkoutDate = dateKey(currentDateInWeek ?? dates[0]);
   const weeklyWorkouts = useMemo(() => {
     const keys = new Set(dates.map(dateKey));
     return workouts.filter((w) => keys.has(w.date));
@@ -272,164 +114,74 @@ export default function HomePage() {
   const planProgress = plannedKm
     ? Math.min(100, (actualKm / plannedKm) * 100)
     : 0;
-  const daysWithWorkouts = dates
-    .map((date, index) => ({
-      date,
-      index,
-      workout: workouts.find((w) => w.date === dateKey(date)),
-    }))
-    .filter(({ workout }) => filter === "all" || workout?.type === filter);
-
   function notify(message: string) {
     setToast(message);
   }
-  function moveWorkout(id: string, destination: string) {
-    const workout = workouts.find((session) => session.id === id);
-    if (!workout || workout.date === destination) return;
-    const occupied = workouts.some((session) => session.date === destination);
-    setWorkouts((current) =>
-      current.map((session) =>
-        session.id === id
-          ? { ...session, date: destination }
-          : session.date === destination
-            ? { ...session, date: workout.date }
-            : session,
-      ),
-    );
-    notify(
-      occupied
-        ? "Sesiones intercambiadas. Se conservaron todos sus datos."
-        : "Entrenamiento movido. Se conservaron todos sus datos.",
-    );
-  }
-  function openWorkout(date = dateKey(new Date()), createNew = false) {
-    const workout = createNew
-      ? undefined
-      : workouts.find((w) => w.date === date);
-    setEditingId(workout?.id ?? "");
-    setFormDate(date);
-    setType(workout?.type ?? "run");
-    setWorkoutTitle(workout?.title ?? "");
-    setMode("plan");
-    setPlannedDistance(
-      workout?.plannedDistance ? String(workout.plannedDistance) : "",
-    );
-    setActualDistance(
-      workout?.actualDistance ? String(workout.actualDistance) : "",
-    );
-    setPlannedDuration(
-      workout?.plannedDuration ? String(workout.plannedDuration) : "",
-    );
-    setActualDuration(
-      workout?.actualDuration ? String(workout.actualDuration) : "",
-    );
-    setPlannedElevation(
-      workout?.plannedElevation ? String(workout.plannedElevation) : "",
-    );
-    setActualElevation(
-      workout?.actualElevation ? String(workout.actualElevation) : "",
-    );
-    setGear(workout?.gear ?? "");
-    setNotes(workout?.notes ?? "");
-    setRpe(workout?.rpe ?? 5);
-    setStatus(workout?.status ?? "planned");
-    setModal("workout");
-  }
-  function saveWorkout(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const plannedMinutes = parseDuration(plannedDuration),
-      actualMinutes = parseDuration(actualDuration);
-    if (plannedMinutes === null || actualMinutes === null) {
-      notify("Usá minutos (90) o el formato HH:MM:SS (1:30:00)");
+  function moveWorkout(id: string, destination?: string) {
+    const source = workouts.find((w) => w.id === id);
+    if (!source || destination === source.date) return;
+    if (
+      !destination ||
+      workouts.some((w) => w.date === destination && w.id !== id)
+    ) {
+      setPendingMove({ id, date: destination });
       return;
     }
-    const previous = workouts.find((w) => w.id === editingId);
-    if (workouts.some((w) => w.date === formDate && w.id !== previous?.id)) {
-      notify(
-        "Ya existe una sesión para esa fecha. Elegí otro día o editá la existente.",
-      );
-      return;
-    }
-    const completedFromPlan = mode === "plan" && status === "completed";
-    const workout: Workout = {
-      ...(previous ?? emptyWorkout(formDate, type)),
-      id: previous?.id ?? makeId(),
-      date: formDate,
-      type,
-      title:
-        workoutTitle.trim() ||
-        (type === "run" ? "Trail / Running" : TYPE_INFO[type].label),
-      plannedDistance: Number(plannedDistance) || 0,
-      actualDistance:
-        completedFromPlan && !actualDistance.trim()
-          ? Number(plannedDistance) || 0
-          : Number(actualDistance) || 0,
-      plannedDuration: plannedMinutes,
-      actualDuration:
-        completedFromPlan && !actualDuration.trim()
-          ? plannedMinutes
-          : actualMinutes,
-      plannedElevation: Number(plannedElevation) || 0,
-      actualElevation:
-        completedFromPlan && !actualElevation.trim()
-          ? Number(plannedElevation) || 0
-          : Number(actualElevation) || 0,
-      gear,
-      notes,
-      rpe,
-      status: mode === "log" && status === "planned" ? "completed" : status,
-    };
+    setWorkouts((current) => relocate(current, id, destination));
+    notify("Sesión movida");
+  }
+  function openWorkout(date = dateKey(new Date()), id?: string) {
+    setEditor(
+      id
+        ? (workouts.find((w) => w.id === id) ?? null)
+        : { ...emptyWorkout(date), id: "" },
+    );
+  }
+  function saveWorkoutRecord(workout: Workout) {
     setWorkouts((current) =>
-      previous
-        ? current.map((w) => (w.id === previous.id ? workout : w))
+      current.some((w) => w.id === workout.id)
+        ? current.map((w) => (w.id === workout.id ? workout : w))
         : [...current, workout],
     );
-    setWeekStart(mondayOf(new Date(`${formDate}T12:00:00`)));
-    setModal(null);
-    notify(
-      workout.status === "completed"
-        ? "Entrenamiento registrado"
-        : "Plan actualizado",
-    );
+    setWeekStart(mondayOf(new Date(workout.date + "T12:00:00")));
+    setEditor(null);
+    notify("Sesión guardada");
   }
-  function quickToggle(date: string) {
-    setWorkouts((current) => {
-      const found = current.find((w) => w.date === date);
-      if (!found)
-        return [...current, { ...emptyWorkout(date), status: "completed" }];
-      return current.map((w) =>
-        w.date === date
-          ? {
+  function quickToggle(id: string) {
+    setWorkouts((current) =>
+      current.map((w) =>
+        w.id !== id
+          ? w
+          : {
               ...w,
               status: w.status === "completed" ? "planned" : "completed",
               actualDistance:
-                w.status === "completed"
-                  ? w.actualDistance
-                  : w.actualDistance || w.plannedDistance,
+                w.status !== "completed"
+                  ? w.actualDistance || w.plannedDistance
+                  : w.actualDistance,
               actualDuration:
-                w.status === "completed"
-                  ? w.actualDuration
-                  : w.actualDuration || w.plannedDuration,
+                w.status !== "completed"
+                  ? w.actualDuration || w.plannedDuration
+                  : w.actualDuration,
               actualElevation:
-                w.status === "completed"
-                  ? w.actualElevation
-                  : w.actualElevation || w.plannedElevation,
-            }
-          : w,
-      );
-    });
-    notify("Estado de la sesión actualizado");
+                w.status !== "completed"
+                  ? w.actualElevation || w.plannedElevation
+                  : w.actualElevation,
+            },
+      ),
+    );
+    notify("Estado actualizado");
   }
   function deleteWorkout() {
-    if (!editingId || !window.confirm("¿Eliminar esta sesión?")) return;
-    setWorkouts((current) => current.filter((w) => w.id !== editingId));
-    setModal(null);
+    if (!editor?.id) return;
+    setWorkouts((current) => current.filter((w) => w.id !== editor.id));
+    setEditor(null);
     notify("Sesión eliminada");
   }
   function exportFile(kind: "json" | "csv") {
     let content: string, mime: string, filename: string;
     if (kind === "json") {
-      content = JSON.stringify({ version: 1, workouts }, null, 2);
+      content = JSON.stringify({ version: 2, workouts, templates }, null, 2);
       mime = "application/json";
       filename = "training-planner-entrenamientos.json";
     } else {
@@ -487,11 +239,16 @@ export default function HomePage() {
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(String(reader.result));
-        if (!Array.isArray(data.workouts)) throw new Error();
-        setWorkouts(
-          data.workouts.map((w: Workout) => ({ ...w, id: w.id || makeId() })),
-        );
+        const data = parseBackup(String(reader.result));
+        if (
+          !window.confirm(
+            "Se reemplazarán las sesiones actuales por las del respaldo. Podés deshacer los cambios de sesiones. ¿Continuar?",
+          )
+        )
+          return;
+        setWorkouts(data.workouts);
+        setTemplates(data.templates);
+        allowSave();
         notify("Datos importados correctamente");
       } catch {
         notify("No se pudo importar ese archivo");
@@ -500,33 +257,6 @@ export default function HomePage() {
     reader.readAsText(file);
     event.target.value = "";
   }
-  const rpeFace =
-    rpe <= 2
-      ? "😌"
-      : rpe <= 4
-        ? "🙂"
-        : rpe <= 6
-          ? "😅"
-          : rpe <= 8
-            ? "🥵"
-            : "🔥";
-  const statsWeeks = useMemo(() => {
-    const end = mondayOf(new Date());
-    return Array.from({ length: 12 }, (_, i) => {
-      const start = plusDays(end, -7 * (11 - i));
-      const keys = new Set(weekDays(start).map(dateKey));
-      const items = workouts.filter(
-        (w) => keys.has(w.date) && w.status === "completed",
-      );
-      return {
-        start,
-        km: items.reduce((sum, w) => sum + (Number(w.actualDistance) || 0), 0),
-      };
-    });
-  }, [workouts]);
-  const allCompleted = workouts.filter((w) => w.status === "completed");
-  const maxKm = Math.max(15, ...statsWeeks.map((w) => w.km));
-
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -613,6 +343,17 @@ export default function HomePage() {
             <strong>{view === "week" ? "MI SEMANA" : "ESTADÍSTICAS"}</strong>
           </div>
           <div className="top-actions">
+            <InstallApp compact />
+            <button
+              className="secondary-button"
+              disabled={!canUndo}
+              onClick={() => {
+                undo();
+                notify("Último cambio deshecho");
+              }}
+            >
+              Deshacer
+            </button>
             <button
               type="button"
               className="icon-button header-theme-toggle"
@@ -637,7 +378,7 @@ export default function HomePage() {
             </button>
             <button
               className="primary-button"
-              onClick={() => openWorkout(defaultNewWorkoutDate, true)}
+              onClick={() => openWorkout(defaultNewWorkoutDate)}
             >
               <span>＋</span> Nuevo entrenamiento
             </button>
@@ -650,6 +391,11 @@ export default function HomePage() {
             </button>
           </div>
         </header>
+        {storageError && (
+          <p className="storage-error" role="alert">
+            {storageError}
+          </p>
+        )}
         {view === "week" ? (
           <section className="view-section">
             <div className="page-heading">
@@ -817,8 +563,8 @@ export default function HomePage() {
                   </span>
                 </div>
                 <p>
-                  Arrastrá para mover una sesión. Si el día está ocupado, se
-                  intercambian las fechas.
+                  Podés agregar varias sesiones por día y moverlas desde su menú
+                  o arrastrándolas.
                 </p>
               </div>
               <div className="filters">
@@ -850,230 +596,51 @@ export default function HomePage() {
                 </button>
               </div>
             </div>
-            <div
-              className={`days-grid ${layout === "list" ? "list-mode" : ""}`}
-            >
-              {daysWithWorkouts.length ? (
-                daysWithWorkouts.map(({ date, index, workout }, i) => {
-                  const today = dateKey(date) === dateKey(new Date());
-                  const kind = workout?.type ?? "rest";
-                  const info = TYPE_INFO[kind];
-                  const done = workout?.status === "completed";
-                  const skipped = workout?.status === "skipped";
-                  const shownDistance = done
-                    ? workout?.actualDistance
-                    : workout?.plannedDistance;
-                  return (
-                    <article
-                      key={dateKey(date)}
-                      data-workout-date={dateKey(date)}
-                      className={`day-card ${today ? "today" : ""} ${done ? "completed" : ""} ${draggedId === workout?.id ? "dragging" : ""} ${dropDate === dateKey(date) ? "drop-target" : ""}`}
-                      draggable={Boolean(workout)}
-                      onDragStart={(event) => {
-                        if (!workout) return;
-                        event.dataTransfer.setData(
-                          "application/x-training-planner",
-                          workout.id,
-                        );
-                        event.dataTransfer.effectAllowed = "move";
-                        setDraggedId(workout.id);
-                      }}
-                      onDragOver={(event) => {
-                        if (!draggedId) return;
-                        event.preventDefault();
-                        event.dataTransfer.dropEffect = "move";
-                        setDropDate(dateKey(date));
-                      }}
-                      onDragLeave={(event) => {
-                        if (
-                          !event.currentTarget.contains(
-                            event.relatedTarget as Node | null,
-                          )
-                        )
-                          setDropDate(null);
-                      }}
-                      onDrop={(event) => {
-                        event.preventDefault();
-                        event.stopPropagation();
-                        const id = event.dataTransfer.getData(
-                          "application/x-training-planner",
-                        );
-                        if (id && id === draggedId)
-                          moveWorkout(id, dateKey(date));
-                        setDraggedId(null);
-                        setDropDate(null);
-                      }}
-                      onDragEnd={() => {
-                        setDraggedId(null);
-                        setDropDate(null);
-                      }}
-                      style={{ animationDelay: `${i * 35}ms` }}
-                      onClick={() => openWorkout(dateKey(date))}
-                    >
-                      <div className="day-top">
-                        <span className="day-name">{SHORT_DAYS[index]}</span>
-                        {workout && (
-                          <button
-                            type="button"
-                            className="drag-handle"
-                            aria-label={`Mover ${workout.title || info.label}. Arrastrá a otro día; también podés editar la fecha abriendo la sesión.`}
-                            title="Arrastrar a otro día"
-                            onClick={(event) => event.stopPropagation()}
-                            onDragStart={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                            onPointerDown={(event) => {
-                              if (!event.isPrimary || event.button !== 0)
-                                return;
-                              event.preventDefault();
-                              event.stopPropagation();
-                              event.currentTarget.setPointerCapture(
-                                event.pointerId,
-                              );
-                              pointerDrag.current = {
-                                id: workout.id,
-                                pointerId: event.pointerId,
-                                x: event.clientX,
-                                y: event.clientY,
-                              };
-                              setDraggedId(workout.id);
-                            }}
-                            onPointerMove={(event) => {
-                              const drag = pointerDrag.current;
-                              if (!drag || drag.pointerId !== event.pointerId)
-                                return;
-                              drag.x = event.clientX;
-                              drag.y = event.clientY;
-                            }}
-                            onPointerUp={(event) => {
-                              const drag = pointerDrag.current;
-                              if (!drag || drag.pointerId !== event.pointerId)
-                                return;
-                              event.stopPropagation();
-                              const target = document
-                                .elementFromPoint(event.clientX, event.clientY)
-                                ?.closest<HTMLElement>("[data-workout-date]");
-                              pointerDrag.current = null;
-                              setDraggedId(null);
-                              setDropDate(null);
-                              if (target?.dataset.workoutDate)
-                                moveWorkout(
-                                  drag.id,
-                                  target.dataset.workoutDate,
-                                );
-                            }}
-                            onPointerCancel={() => {
-                              pointerDrag.current = null;
-                              setDraggedId(null);
-                              setDropDate(null);
-                            }}
-                            onLostPointerCapture={() => {
-                              pointerDrag.current = null;
-                              setDraggedId(null);
-                              setDropDate(null);
-                            }}
-                          >
-                            <span aria-hidden="true">⠿</span>
-                          </button>
-                        )}
-                        <span className="day-number">{date.getDate()}</span>
-                      </div>
-                      {today && <span className="today-tag">HOY</span>}
-                      <div className="workout-name">
-                        {workout?.title || info.label}
-                      </div>
-                      <span className={`discipline-badge ${info.badge}`}>
-                        {info.icon} &nbsp;{info.label}
-                      </span>
-                      <div className="day-metrics">
-                        {workout ? (
-                          <>
-                            {shownDistance || workout.plannedDistance ? (
-                              <span className={!done ? "planned" : ""}>
-                                ↗ <b>{shownDistance || 0}</b> km
-                              </span>
-                            ) : null}
-                            {done && workout.plannedDistance > 0 && (
-                              <>
-                                <span className="divider">·</span>
-                                <span className="planned">
-                                  {workout.plannedDistance} km plan.
-                                </span>
-                              </>
-                            )}
-                            {(done
-                              ? workout.actualDuration
-                              : workout.plannedDuration) > 0 && (
-                              <span>
-                                ◷{" "}
-                                <b>
-                                  {fmtMinutes(
-                                    done
-                                      ? workout.actualDuration
-                                      : workout.plannedDuration,
-                                  )}
-                                </b>
-                              </span>
-                            )}
-                            {(done
-                              ? workout.actualElevation
-                              : workout.plannedElevation) > 0 && (
-                              <span>
-                                ⌁{" "}
-                                <b>
-                                  {done
-                                    ? workout.actualElevation
-                                    : workout.plannedElevation}
-                                </b>{" "}
-                                m
-                              </span>
-                            )}
-                          </>
-                        ) : (
-                          <span className="planned">Un día para recuperar</span>
-                        )}
-                      </div>
-                      <div className="day-bottom">
-                        <span
-                          className={`status-pill ${done ? "done" : skipped ? "skipped" : ""}`}
-                        >
-                          <i className="status-dot" />
-                          {done
-                            ? "Completado"
-                            : skipped
-                              ? "Saltado"
-                              : "Planificado"}
-                        </span>
-                        <button
-                          className="quick-complete"
-                          title="Cambiar estado"
-                          aria-label="Cambiar estado"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            quickToggle(dateKey(date));
-                          }}
-                        >
-                          {done ? "✓" : "↗"}
-                        </button>
-                      </div>
-                    </article>
+            <PlanningTools
+              weekStart={weekStart}
+              count={weeklyWorkouts.length}
+              templates={templates}
+              source={templateSource}
+              onClearSource={() => setTemplateSource(null)}
+              onSaveTemplate={(t) => {
+                setTemplates((current) => [...current, t]);
+                notify("Plantilla guardada");
+              }}
+              onDeleteTemplate={(id) =>
+                setTemplates((current) => current.filter((t) => t.id !== id))
+              }
+              onUse={(w) =>
+                setEditor({ ...plannedCopy(w, defaultNewWorkoutDate), id: "" })
+              }
+              onCopyWeek={(date) => {
+                try {
+                  const destination = mondayOf(new Date(date + "T12:00:00"));
+                  setWorkouts(copyWeek(workouts, weekStart, destination));
+                  setWeekStart(destination);
+                  notify("Semana copiada como planificación");
+                } catch (error) {
+                  notify(
+                    error instanceof Error
+                      ? error.message
+                      : "No se pudo copiar",
                   );
-                })
-              ) : (
-                <div className="empty-plan">
-                  <div style={{ fontSize: 22, color: "var(--lime)" }}>◌</div>
-                  <strong>No hay sesiones para este filtro</strong>
-                  <p>Agregá un entrenamiento o probá otra disciplina.</p>
-                  <button
-                    className="primary-button"
-                    onClick={() => openWorkout()}
-                  >
-                    ＋ Agregar sesión
-                  </button>
-                </div>
-              )}
-            </div>
+                }
+              }}
+            />
+            <TrainingCalendar
+              dates={dates}
+              workouts={weeklyWorkouts}
+              filter={filter}
+              layout={layout}
+              onAdd={(date) => openWorkout(date)}
+              onEdit={(w) => openWorkout(w.date, w.id)}
+              onMove={moveWorkout}
+              onToggle={quickToggle}
+              onDuplicate={(w) => {
+                setEditor({ ...plannedCopy(w, w.date), id: "" });
+              }}
+              onTemplate={(w) => setTemplateSource(w)}
+            />
             <footer className="page-footer">
               <span>
                 <span className="footer-pulse">✳</span>Los días de descanso
@@ -1082,372 +649,36 @@ export default function HomePage() {
             </footer>
           </section>
         ) : (
-          <section className="view-section">
-            <div className="page-heading stats-heading">
-              <div>
-                <div className="eyebrow">
-                  <span className="live-dot" /> TU PROGRESO EN EL TIEMPO
-                </div>
-                <h1>
-                  Estadísticas<span className="heading-period">.</span>
-                </h1>
-                <p className="subheading">
-                  Una mirada a todo lo que venís construyendo.
-                </p>
-              </div>
-              <span className="week-picker stats-range">
-                Últimas 12 semanas <span className="chevron">⌄</span>
-              </span>
-            </div>
-            <div className="stats-summary">
-              <article className="summary-card">
-                <span>KM REGISTRADOS</span>
-                <strong>
-                  {allCompleted
-                    .reduce((s, w) => s + w.actualDistance, 0)
-                    .toFixed(1)}{" "}
-                  km
-                </strong>
-                <small>
-                  {allCompleted.length} sesiones completadas en total
-                </small>
-              </article>
-              <article className="summary-card">
-                <span>DESNIVEL ACUMULADO</span>
-                <strong>
-                  {allCompleted
-                    .reduce((s, w) => s + w.actualElevation, 0)
-                    .toLocaleString("es-AR")}{" "}
-                  m
-                </strong>
-                <small>D+ de todas tus sesiones</small>
-              </article>
-              <article className="summary-card">
-                <span>PROMEDIO SEMANAL</span>
-                <strong>
-                  {(statsWeeks.reduce((s, w) => s + w.km, 0) / 12).toFixed(1)}{" "}
-                  km
-                </strong>
-                <small>Últimas 12 semanas</small>
-              </article>
-            </div>
-            <article className="chart-card">
-              <div className="chart-header">
-                <div>
-                  <span className="section-kicker">VOLUMEN SEMANAL</span>
-                  <h2>Kilómetros por semana</h2>
-                </div>
-                <div className="chart-legend">
-                  <span />
-                  Realizado
-                </div>
-              </div>
-              <div className="chart-wrap">
-                <div className="chart-y-labels">
-                  <span>60</span>
-                  <span>45</span>
-                  <span>30</span>
-                  <span>15</span>
-                  <span>0</span>
-                </div>
-                <div className="chart-area">
-                  <div className="chart-gridlines">
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                    <i />
-                  </div>
-                  <div className="bars">
-                    {statsWeeks.map(({ start, km }) => (
-                      <div className="bar-group" key={dateKey(start)}>
-                        <div className="bar-track">
-                          <div
-                            className="bar"
-                            style={{
-                              height: `${Math.max(km ? 3 : 0, (km / maxKm) * 100)}%`,
-                            }}
-                          >
-                            {km > 0 && (
-                              <span className="bar-value">
-                                {km.toFixed(km % 1 ? 1 : 0)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        <span className="bar-label">{`${String(start.getDate()).padStart(2, "0")} ${monthShort(start)}`}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="chart-foot">
-                <span>Las semanas se agrupan de lunes a domingo.</span>
-                <span>km</span>
-              </div>
-            </article>
-            <button className="back-link" onClick={() => setView("week")}>
-              ← Volver a mi semana
-            </button>
-          </section>
+          <TrainingStatistics
+            workouts={workouts}
+            onBack={() => setView("week")}
+          />
         )}
       </main>
 
-      {modal === "workout" && (
-        <div
-          className="modal-backdrop open"
-          onMouseDown={(e) => {
-            if (e.target === e.currentTarget) setModal(null);
+      {pendingMove && workouts.find((w) => w.id === pendingMove.id) && (
+        <MoveDialog
+          source={workouts.find((w) => w.id === pendingMove.id)!}
+          date={pendingMove.date}
+          workouts={workouts}
+          onClose={() => setPendingMove(null)}
+          onConfirm={(date, swapId) => {
+            setWorkouts((current) =>
+              relocate(current, pendingMove.id, date, swapId),
+            );
+            setWeekStart(mondayOf(new Date(date + "T12:00:00")));
+            setPendingMove(null);
+            notify(swapId ? "Fechas intercambiadas" : "Sesión movida");
           }}
-        >
-          <section
-            className="workout-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="modalTitle"
-          >
-            <div className="dialog-head">
-              <div>
-                <div className="eyebrow">
-                  <span className="live-dot" /> SESIÓN DE ENTRENAMIENTO
-                </div>
-                <h2 id="modalTitle">
-                  {editingId ? "Editar sesión" : "Nueva sesión"}
-                </h2>
-              </div>
-              <button
-                className="close-button"
-                onClick={() => setModal(null)}
-                aria-label="Cerrar"
-              >
-                ×
-              </button>
-            </div>
-            <div className="mode-switch">
-              <button
-                className={`mode-option ${mode === "plan" ? "active" : ""}`}
-                onClick={() => setMode("plan")}
-              >
-                ◷ <span>Planificación</span>
-              </button>
-              <button
-                className={`mode-option ${mode === "log" ? "active" : ""}`}
-                onClick={() => {
-                  setMode("log");
-                  if (status === "planned") setStatus("completed");
-                }}
-              >
-                ✓ <span>Registro real</span>
-              </button>
-            </div>
-            <form onSubmit={saveWorkout}>
-              <div className="form-grid">
-                <label className="field full-field">
-                  DÍA DE ENTRENAMIENTO
-                  <input
-                    type="date"
-                    required
-                    value={formDate}
-                    onChange={(e) => setFormDate(e.target.value)}
-                  />
-                </label>
-                <label className="field full-field">
-                  TÍTULO DEL ENTRENAMIENTO
-                  <input
-                    value={workoutTitle}
-                    onChange={(e) => setWorkoutTitle(e.target.value)}
-                    placeholder="Ej. Long Run, Cuestas, Fuerza..."
-                  />
-                </label>
-                <div className="field full-field">
-                  DISCIPLINA
-                  <div className="discipline-options">
-                    {DISCIPLINES.map((d) => (
-                      <button
-                        key={d}
-                        type="button"
-                        className={`discipline-choice ${type === d ? "active" : ""}`}
-                        onClick={() => setType(d)}
-                      >
-                        {TYPE_INFO[d].icon} {TYPE_INFO[d].label.split(" / ")[0]}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="form-divider full-field">
-                  <span>
-                    {mode === "plan"
-                      ? "OBJETIVOS PLANIFICADOS"
-                      : "DATOS DE LA SESIÓN REALIZADA"}
-                  </span>
-                  <i />
-                </div>
-                {mode === "plan" ? (
-                  <>
-                    <label className="field">
-                      DISTANCIA <span>(km)</span>
-                      <div className="input-wrap">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          placeholder="0.0"
-                          value={plannedDistance}
-                          onChange={(e) => setPlannedDistance(e.target.value)}
-                        />
-                        <span>km</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      TIEMPO <span>(min o HH:MM:SS)</span>
-                      <div className="input-wrap">
-                        <input
-                          type="text"
-                          inputMode="text"
-                          placeholder="90 o 1:30:00"
-                          value={plannedDuration}
-                          onChange={(e) => setPlannedDuration(e.target.value)}
-                          aria-label="Tiempo planificado en minutos o HH:MM:SS"
-                        />
-                        <span>min / HH:MM:SS</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      DESNIVEL POSITIVO <span>(m)</span>
-                      <div className="input-wrap">
-                        <input
-                          type="number"
-                          min="0"
-                          step="10"
-                          placeholder="0"
-                          value={plannedElevation}
-                          onChange={(e) => setPlannedElevation(e.target.value)}
-                        />
-                        <span>m D+</span>
-                      </div>
-                    </label>
-                  </>
-                ) : (
-                  <>
-                    <label className="field">
-                      DISTANCIA <span>(km)</span>
-                      <div className="input-wrap">
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.1"
-                          placeholder="0.0"
-                          value={actualDistance}
-                          onChange={(e) => setActualDistance(e.target.value)}
-                        />
-                        <span>km</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      TIEMPO <span>(min o HH:MM:SS)</span>
-                      <div className="input-wrap">
-                        <input
-                          type="text"
-                          inputMode="text"
-                          placeholder="90 o 1:30:00"
-                          value={actualDuration}
-                          onChange={(e) => setActualDuration(e.target.value)}
-                          aria-label="Tiempo realizado en minutos o HH:MM:SS"
-                        />
-                        <span>min / HH:MM:SS</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      DESNIVEL POSITIVO <span>(m)</span>
-                      <div className="input-wrap">
-                        <input
-                          type="number"
-                          min="0"
-                          step="10"
-                          placeholder="0"
-                          value={actualElevation}
-                          onChange={(e) => setActualElevation(e.target.value)}
-                        />
-                        <span>m D+</span>
-                      </div>
-                    </label>
-                    <label className="field">
-                      CALZADO / EQUIPO <span>(opcional)</span>
-                      <input
-                        value={gear}
-                        onChange={(e) => setGear(e.target.value)}
-                        placeholder="Ej. Zapatillas de trail"
-                      />
-                    </label>
-                    <label className="field full-field">
-                      ESFUERZO PERCIBIDO (RPE)
-                      <div className="rpe-row">
-                        <div className="rpe-emoji">{rpeFace}</div>
-                        <input
-                          type="range"
-                          min="1"
-                          max="10"
-                          value={rpe}
-                          onChange={(e) => setRpe(Number(e.target.value))}
-                        />
-                        <div className="rpe-number">
-                          <strong>{rpe}</strong>
-                          <span> / 10</span>
-                        </div>
-                      </div>
-                      <div className="range-labels">
-                        <span>Suave</span>
-                        <span>Máximo esfuerzo</span>
-                      </div>
-                    </label>
-                    <label className="field full-field">
-                      NOTAS Y SENSACIONES
-                      <textarea
-                        rows={3}
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        placeholder="¿Cómo te sentiste? Clima, nutrición, sensaciones..."
-                      />
-                    </label>
-                  </>
-                )}
-                <label className="field full-field">
-                  ESTADO DE LA SESIÓN
-                  <select
-                    value={status}
-                    onChange={(e) => setStatus(e.target.value as Status)}
-                  >
-                    <option value="planned">Planificado</option>
-                    <option value="completed">Completado</option>
-                    <option value="skipped">Saltado</option>
-                  </select>
-                </label>
-              </div>
-              <div className="dialog-actions">
-                {editingId && (
-                  <button
-                    type="button"
-                    className="delete-button"
-                    onClick={deleteWorkout}
-                  >
-                    Eliminar sesión
-                  </button>
-                )}
-                <div className="action-spacer" />
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setModal(null)}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="primary-button">
-                  Guardar sesión <span>↗</span>
-                </button>
-              </div>
-            </form>
-          </section>
-        </div>
+        />
+      )}
+      {editor && (
+        <WorkoutEditor
+          initial={editor}
+          onSave={saveWorkoutRecord}
+          onDelete={deleteWorkout}
+          onClose={() => setEditor(null)}
+        />
       )}
       {modal === "settings" && (
         <div
@@ -1503,6 +734,11 @@ export default function HomePage() {
                   </button>
                 </div>
               </div>
+              <p className="install-help">
+                Para instalar en el celular: menú del navegador → Instalar
+                aplicación. En iPhone: Safari → Compartir → Agregar a inicio.
+                Disponible en producción con HTTPS.
+              </p>
               <div className="settings-actions">
                 <button
                   className="secondary-button"
@@ -1550,7 +786,7 @@ export default function HomePage() {
           </section>
         </div>
       )}
-      <div className={`toast ${toast ? "show" : ""}`}>
+      <div role="status" className={`toast ${toast ? "show" : ""}`}>
         <span>✓</span>
         <span>{toast}</span>
       </div>

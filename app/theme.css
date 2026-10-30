@@ -497,3 +497,277 @@ html[data-theme="dark"] {
 :root .day-card.dragging {
   user-select: none;
 }
+
+/* Multi-session calendar and planning tools */
+:root .multi-calendar {
+  align-items: start;
+}
+:root .calendar-day {
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 14px;
+}
+:root .calendar-day.today {
+  border-color: var(--text);
+}
+:root .calendar-day.drop-target {
+  outline: 2px dashed var(--text);
+  outline-offset: -5px;
+  background: var(--card-hi);
+}
+:root .session-card {
+  position: relative;
+  margin-top: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+  cursor: grab;
+}
+:root .session-card.dragging {
+  opacity: 0.4;
+}
+:root .session-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root .session-title {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+:root .session-title:hover {
+  text-decoration: underline;
+}
+:root .session-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin: 12px 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+:root .session-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+:root .session-actions button,
+:root .session-actions summary,
+:root .add-session {
+  min-height: 40px;
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+:root .session-actions summary {
+  cursor: pointer;
+  list-style: none;
+}
+:root .session-actions summary::-webkit-details-marker {
+  display: none;
+}
+:root .session-menu {
+  position: absolute;
+  right: 0;
+  z-index: 8;
+  min-width: 180px;
+  padding: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  display: grid;
+  gap: 4px;
+}
+:root .session-menu button {
+  text-align: left;
+}
+:root .session-menu button:hover {
+  background: var(--card-hi);
+}
+:root .day-empty {
+  min-height: 60px;
+  font-size: 12px;
+  color: var(--muted);
+}
+:root .add-session {
+  width: 100%;
+  margin-top: 12px;
+  border-style: dashed;
+}
+:root .planning-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 20px;
+}
+:root .planning-tools > .secondary-button {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+:root .template-library {
+  flex-basis: 100%;
+  padding: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+:root .template-library p,
+:root .template-library h3 {
+  margin: 8px 0 12px;
+}
+:root .template-library > button {
+  margin: 0 8px 8px 0;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+:root .template-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+:root .template-row button {
+  min-height: 40px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 8px;
+}
+:root .template-row button:first-child {
+  flex: 1;
+  text-align: left;
+}
+:root .move-choice {
+  display: grid;
+  gap: 14px;
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid var(--border);
+}
+:root .move-choice > label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+:root .move-choice > .field {
+  display: grid;
+}
+:root button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+:root .top-actions > .secondary-button {
+  min-height: 38px;
+  padding: 6px 10px;
+}
+:root .editor-error {
+  color: var(--text);
+}
+:root .storage-error {
+  margin: 20px;
+  padding: 16px;
+  border: 2px solid var(--text);
+}
+:root .table-scroll {
+  overflow-x: auto;
+  margin: 28px 0;
+}
+:root .training-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: left;
+}
+:root .training-table caption {
+  text-align: left;
+  font-size: 16px;
+  font-weight: 600;
+  padding: 12px 0;
+}
+:root .training-table th,
+:root .training-table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+:root .training-table thead {
+  background: var(--surface);
+}
+:root .stats-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+:root .stats-controls .field {
+  flex: 1;
+  min-width: 180px;
+}
+:root .discipline-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 20px 0;
+}
+:root .discipline-bar-group {
+  flex: 1;
+  min-width: 42px;
+  text-align: center;
+  font-size: 11px;
+}
+:root .discipline-bar-track {
+  height: 180px;
+  display: flex;
+  align-items: end;
+  margin: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+:root .discipline-bar-track > div {
+  width: 100%;
+  background: var(--text);
+}
+:root .install-help {
+  font-size: 12px;
+  color: var(--muted);
+}
+:root .list-mode .calendar-day {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 12px;
+}
+:root .list-mode .calendar-day > .day-top {
+  grid-row: 1 / span 20;
+  align-self: start;
+}
+:root .list-mode .session-card {
+  margin-top: 0;
+}
+@media (max-width: 600px) {
+  :root .list-mode .calendar-day {
+    display: block;
+  }
+  :root .session-actions button,
+  :root .session-actions summary {
+    min-height: 44px;
+  }
+  :root .session-heading .drag-handle {
+    flex-shrink: 0;
+  }
+}
+
+:root .field input[type="checkbox"] {
+  width: 20px;
+  min-height: 20px;
+  height: 20px;
+  padding: 0;
+  accent-color: var(--text);
+}
