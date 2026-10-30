@@ -17,6 +17,7 @@ import {
   emptyWorkout,
 } from "@/lib/training";
 
+import { Icon } from "@/components/icon";
 import { InstallApp } from "@/components/install-app";
 import { PlanningTools } from "@/components/planning-tools";
 import { TrainingStatistics } from "@/components/training-statistics";
@@ -314,7 +315,7 @@ export default function HomePage() {
               onClick={() => setModal("settings")}
               aria-label="Configuración"
             >
-              ⚙
+              <Icon name="settings" />
             </button>
           </div>
         </div>
@@ -368,7 +369,7 @@ export default function HomePage() {
                 theme === "light" ? "Activar modo oscuro" : "Activar modo claro"
               }
             >
-              <span aria-hidden="true">{theme === "light" ? "☾" : "☀"}</span>
+              <Icon name={theme === "light" ? "moon" : "sun"} />
             </button>
             <button
               className="today-link"
@@ -387,7 +388,7 @@ export default function HomePage() {
               onClick={() => setModal("settings")}
               aria-label="Configuración"
             >
-              ⚙
+              <Icon name="settings" />
             </button>
           </div>
         </header>
@@ -491,7 +492,9 @@ export default function HomePage() {
               <article className="kpi-card">
                 <div className="kpi-head">
                   <span>KILÓMETROS</span>
-                  <span className="kpi-icon orange">↗</span>
+                  <span className="kpi-icon orange">
+                    <Icon name="distance" />
+                  </span>
                 </div>
                 <div className="kpi-value">
                   <strong>{actualKm.toFixed(actualKm % 1 ? 1 : 0)}</strong>
@@ -505,7 +508,9 @@ export default function HomePage() {
               <article className="kpi-card">
                 <div className="kpi-head">
                   <span>TIEMPO TOTAL</span>
-                  <span className="kpi-icon blue">◷</span>
+                  <span className="kpi-icon blue">
+                    <Icon name="time" />
+                  </span>
                 </div>
                 <div className="kpi-value">
                   <strong>
@@ -522,7 +527,9 @@ export default function HomePage() {
               <article className="kpi-card">
                 <div className="kpi-head">
                   <span>DESNIVEL POSITIVO</span>
-                  <span className="kpi-icon lime">⌁</span>
+                  <span className="kpi-icon lime">
+                    <Icon name="elevation" />
+                  </span>
                 </div>
                 <div className="kpi-value">
                   <strong>{elevation.toLocaleString("es-AR")}</strong>
@@ -537,7 +544,9 @@ export default function HomePage() {
               <article className="kpi-card">
                 <div className="kpi-head">
                   <span>SESIONES</span>
-                  <span className="kpi-icon violet">✳</span>
+                  <span className="kpi-icon violet">
+                    <Icon name="sessions" />
+                  </span>
                 </div>
                 <div className="kpi-value">
                   <strong>{completed.length}</strong>

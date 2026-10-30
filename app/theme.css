@@ -771,3 +771,104 @@ html[data-theme="dark"] {
   padding: 0;
   accent-color: var(--text);
 }
+
+/* Keep the mobile header in normal flow, including on Safari with large text. */
+:root {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+:root .ui-icon {
+  display: block;
+  flex-shrink: 0;
+}
+@media (max-width: 760px) {
+  :root .topbar {
+    height: auto;
+    min-height: 58px;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 16px;
+    padding: 16px 18px;
+  }
+  :root .mobile-brand {
+    min-height: 28px;
+  }
+  :root .top-actions {
+    display: grid;
+    grid-template-columns: auto 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+  }
+  :root .top-actions > .install-button {
+    grid-column: 1 / -1;
+  }
+  :root .top-actions > .secondary-button {
+    min-height: 44px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  :root .top-actions > .primary-button {
+    height: auto;
+    min-height: 44px;
+    min-width: 0;
+    padding: 8px;
+    white-space: normal;
+    line-height: 1.3;
+    font-size: 12px;
+  }
+  :root .top-actions > .icon-button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+  :root .view-section {
+    padding-top: 24px;
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+  }
+  :root .progress-panel {
+    padding: 18px;
+  }
+  :root .progress-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  :root .progress-caption {
+    max-width: none;
+    font-size: 12px;
+  }
+  :root .progress-bottom {
+    flex-direction: column;
+    gap: 6px;
+    font-size: 11px;
+  }
+  :root .progress-track {
+    margin-block: 16px 12px;
+  }
+  :root .progress-dot {
+    flex-shrink: 0;
+  }
+  :root .kpi-card {
+    padding: 14px;
+  }
+  :root .kpi-head {
+    gap: 8px;
+    font-size: 10px;
+  }
+  :root .kpi-head > span:first-child {
+    min-width: 0;
+  }
+  :root .kpi-icon {
+    flex-shrink: 0;
+  }
+  :root .kpi-foot {
+    line-height: 1.5;
+  }
+  :root .field input:not([type="checkbox"]):not([type="range"]),
+  :root .field select,
+  :root .field textarea {
+    font-size: 16px;
+  }
+}

@@ -55,7 +55,7 @@ export function InstallApp({ compact = false }: { compact?: boolean }) {
     );
   return install ? (
     <button
-      className="secondary-button"
+      className="secondary-button install-button"
       onClick={async () => {
         await install.prompt();
         await install.userChoice;

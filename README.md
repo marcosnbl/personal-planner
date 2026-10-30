@@ -65,4 +65,3 @@ El service worker se registra solo en producción. Tras una primera carga comple
 - `hooks/use-training-store.ts`: hidratación, persistencia y gestión de errores locales.
 - `lib/training.ts`, `lib/history.ts`: modelo, validación, cálculos, operaciones e historial.
 - `tests/training.test.mjs`: pruebas de dominio con Node.js.
-
