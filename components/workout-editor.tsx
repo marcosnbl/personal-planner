@@ -63,7 +63,10 @@ export function WorkoutEditor({
       return;
     }
     const previous = initial.id ? initial : undefined;
-    const completedFromPlan = mode === "plan" && status === "completed";
+    const completedFromPlan =
+      mode === "plan" &&
+      status === "completed" &&
+      initial.status !== "completed";
     const workout: Workout = {
       ...(previous ?? emptyWorkout(formDate, type)),
       id: previous?.id ?? makeId(),
@@ -73,20 +76,15 @@ export function WorkoutEditor({
         workoutTitle.trim() ||
         (type === "run" ? "Trail / Running" : TYPE_INFO[type].label),
       plannedDistance: Number(plannedDistance) || 0,
-      actualDistance:
-        completedFromPlan && !actualDistance.trim()
-          ? Number(plannedDistance) || 0
-          : Number(actualDistance) || 0,
+      actualDistance: completedFromPlan
+        ? Number(plannedDistance) || 0
+        : Number(actualDistance) || 0,
       plannedDuration: plannedMinutes,
-      actualDuration:
-        completedFromPlan && !actualDuration.trim()
-          ? plannedMinutes
-          : actualMinutes,
+      actualDuration: completedFromPlan ? plannedMinutes : actualMinutes,
       plannedElevation: Number(plannedElevation) || 0,
-      actualElevation:
-        completedFromPlan && !actualElevation.trim()
-          ? Number(plannedElevation) || 0
-          : Number(actualElevation) || 0,
+      actualElevation: completedFromPlan
+        ? Number(plannedElevation) || 0
+        : Number(actualElevation) || 0,
       gear,
       notes,
       rpe: includeRpe ? rpe : undefined,

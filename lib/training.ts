@@ -283,3 +283,15 @@ export function parseBackup(raw: string): {
   });
   return { version: 2, workouts, templates };
 }
+
+/** Completing from the calendar confirms the plan, including intentional zero values. */
+export function toggleWorkoutStatus(workout: Workout): Workout {
+  if (workout.status === "completed") return { ...workout, status: "planned" };
+  return {
+    ...workout,
+    status: "completed",
+    actualDistance: workout.plannedDistance,
+    actualDuration: workout.plannedDuration,
+    actualElevation: workout.plannedElevation,
+  };
+}

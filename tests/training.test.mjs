@@ -169,3 +169,35 @@ test("historial conserva hasta 20 cambios y vuelve al estado guardado", () => {
   const stored = JSON.stringify({ version: 2, workouts: state.current });
   assert.deepEqual(parseBackup(stored).workouts, state.current);
 });
+
+test("completar confirma 71 minutos planificados aunque hubiera 80 reales previos", async () => {
+  const { toggleWorkoutStatus, fmtMinutes } =
+    await import("../lib/training.ts");
+  const planned = {
+    ...workout("2026-10-29"),
+    status: "planned",
+    plannedDuration: 71,
+    actualDuration: 80,
+  };
+  const done = toggleWorkoutStatus(planned);
+  assert.equal(done.actualDuration, 71);
+  assert.equal(fmtMinutes(done.actualDuration), "1h 11m");
+  assert.equal(done.actualDistance, planned.plannedDistance);
+  assert.equal(planned.actualDuration, 80);
+  const zero = toggleWorkoutStatus({
+    ...planned,
+    plannedDuration: 0,
+    plannedElevation: 0,
+    plannedDistance: 0,
+  });
+  assert.equal(zero.actualDuration, 0);
+  assert.equal(zero.actualElevation, 0);
+  assert.equal(zero.actualDistance, 0);
+  const history = historyReducer(
+    { current: [planned], past: [] },
+    { type: "change", update: [done] },
+  );
+  assert.deepEqual(historyReducer(history, { type: "undo" }).current, [
+    planned,
+  ]);
+});

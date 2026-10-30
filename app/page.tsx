@@ -15,6 +15,7 @@ import {
   weekDays,
   weekNumber,
   emptyWorkout,
+  toggleWorkoutStatus,
 } from "@/lib/training";
 
 import { Icon } from "@/components/icon";
@@ -150,28 +151,11 @@ export default function HomePage() {
   }
   function quickToggle(id: string) {
     setWorkouts((current) =>
-      current.map((w) =>
-        w.id !== id
-          ? w
-          : {
-              ...w,
-              status: w.status === "completed" ? "planned" : "completed",
-              actualDistance:
-                w.status !== "completed"
-                  ? w.actualDistance || w.plannedDistance
-                  : w.actualDistance,
-              actualDuration:
-                w.status !== "completed"
-                  ? w.actualDuration || w.plannedDuration
-                  : w.actualDuration,
-              actualElevation:
-                w.status !== "completed"
-                  ? w.actualElevation || w.plannedElevation
-                  : w.actualElevation,
-            },
-      ),
+      current.map((w) => (w.id === id ? toggleWorkoutStatus(w) : w)),
     );
-    notify("Estado actualizado");
+    notify(
+      "Estado actualizado. Al completar se confirman los valores planificados.",
+    );
   }
   function deleteWorkout() {
     if (!editor?.id) return;
