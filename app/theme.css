@@ -872,3 +872,90 @@ html[data-theme="dark"] {
     font-size: 16px;
   }
 }
+
+:root .account-panel {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+:root .account-panel form {
+  display: grid;
+  gap: 12px;
+}
+:root .account-panel strong {
+  overflow-wrap: anywhere;
+}
+:root .sync-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 16px clamp(18px, 4vw, 64px);
+  padding: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 13px;
+}
+:root .sync-banner button {
+  min-height: 40px;
+  padding: 8px 12px;
+}
+:root .account-loading {
+  padding: 32px;
+}
+@media (max-width: 760px) {
+  :root .top-actions > .account-header-button {
+    grid-column: 1 / -1;
+  }
+  :root .account-panel input {
+    font-size: 16px;
+  }
+}
+
+:root .account-actions {
+  display: grid;
+  gap: 12px;
+}
+:root .account-actions > button {
+  min-height: 44px;
+  padding: 10px 16px;
+}
+:root .google-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #fff;
+  color: #1f1f1f;
+  border: 1px solid #747775;
+  border-radius: 4px;
+  font-weight: 600;
+}
+:root .google-signin svg {
+  flex-shrink: 0;
+}
+:root .google-signin:hover {
+  background: #f2f2f2;
+}
+:root .auth-callback {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+}
+:root .auth-callback-card {
+  width: min(100%, 480px);
+  padding: 28px;
+  border: 1px solid var(--border);
+}
+:root .auth-callback-card h1 {
+  font-size: 28px;
+  line-height: 1.2;
+}
+:root .auth-callback-card .secondary-button {
+  display: inline-flex;
+  padding: 12px 16px;
+  margin-top: 16px;
+  text-decoration: none;
+}

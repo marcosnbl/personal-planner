@@ -1,5 +1,5 @@
-/* Only the application shell and immutable static assets are cached. Training data stays in localStorage. */
-const CACHE = "training-planner-shell-v1";
+/* Only the application shell and immutable static assets are cached. Account data and OAuth callbacks are never cached. */
+const CACHE = "training-planner-shell-v2";
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches
@@ -28,11 +28,13 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
   if (event.request.method !== "GET" || url.origin !== self.location.origin)
     return;
+  // OAuth return codes are one-use values. Never cache or fall back for auth routes.
+  if (url.pathname.startsWith("/auth/")) return;
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          if (response.ok) {
+          if (response.ok && url.pathname === "/" && !url.search) {
             const copy = response.clone();
             event.waitUntil(
               caches.open(CACHE).then((cache) => cache.put("/", copy)),

@@ -26,7 +26,7 @@ export function InstallApp({ compact = false }: { compact?: boolean }) {
                 new URL(url).origin === location.origin &&
                 new URL(url).pathname.startsWith("/_next/static/"),
             );
-          const cache = await caches.open("training-planner-shell-v1");
+          const cache = await caches.open("training-planner-shell-v2");
           await cache.addAll(assets);
         })
         .catch(() => {});

@@ -19,6 +19,8 @@ import {
 } from "@/lib/training";
 
 import { Icon } from "@/components/icon";
+import { AccountProvider, useAccount } from "@/components/account-provider";
+import { AccountPanel } from "@/components/account-panel";
 import { InstallApp } from "@/components/install-app";
 import { PlanningTools } from "@/components/planning-tools";
 import { TrainingStatistics } from "@/components/training-statistics";
@@ -28,6 +30,24 @@ import { WorkoutEditor } from "@/components/workout-editor";
 import { useTrainingStore } from "@/hooks/use-training-store";
 import { copyWeek, plannedCopy, parseBackup, relocate } from "@/lib/training";
 export default function HomePage() {
+  return (
+    <AccountProvider>
+      <AccountBoundary />
+    </AccountProvider>
+  );
+}
+function AccountBoundary() {
+  const { user, ready } = useAccount();
+  return ready ? (
+    <PlannerPage key={user?.id ?? "guest"} />
+  ) : (
+    <p className="account-loading" role="status">
+      Abriendo Training planner…
+    </p>
+  );
+}
+function PlannerPage() {
+  const { user } = useAccount();
   const {
     workouts,
     setWorkouts,
@@ -38,6 +58,11 @@ export default function HomePage() {
     canUndo,
     undo,
     allowSave,
+    syncState,
+    retrySync,
+    loadRemote,
+    hasLocalData,
+    migrateLocal,
   } = useTrainingStore();
   const [weekStart, setWeekStart] = useState(() => mondayOf(new Date()));
   const [view, setView] = useState<"week" | "stats">("week");
@@ -330,6 +355,12 @@ export default function HomePage() {
           <div className="top-actions">
             <InstallApp compact />
             <button
+              className="secondary-button account-header-button"
+              onClick={() => setModal("settings")}
+            >
+              {user ? "Mi cuenta" : "Ingresar"}
+            </button>
+            <button
               className="secondary-button"
               disabled={!canUndo}
               onClick={() => {
@@ -376,6 +407,66 @@ export default function HomePage() {
             </button>
           </div>
         </header>
+        {user && (
+          <section className="sync-banner" aria-label="Sincronización">
+            <span role="status">
+              {syncState?.status === "synced" && !syncState.dirty
+                ? "Sincronizado con tu cuenta"
+                : syncState?.status === "syncing"
+                  ? "Sincronizando…"
+                  : syncState?.message || "Cambios pendientes de sincronizar"}
+            </span>
+            {syncState?.status === "error" && (
+              <button
+                className="secondary-button"
+                onClick={() => void retrySync()}
+              >
+                Reintentar
+              </button>
+            )}
+            {syncState?.status === "conflict" && (
+              <>
+                <button
+                  className="secondary-button"
+                  onClick={() => exportFile("json")}
+                >
+                  Exportar mi copia
+                </button>
+                <button
+                  className="secondary-button"
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        "Se reemplazará tu copia de este navegador por la versión de la nube. Exportá antes los cambios que quieras conservar. ¿Continuar?",
+                      )
+                    )
+                      void loadRemote();
+                  }}
+                >
+                  Cargar versión de la nube
+                </button>
+              </>
+            )}
+            {hasLocalData && (
+              <button
+                className="secondary-button"
+                disabled={
+                  !syncState || syncState.status !== "synced" || syncState.dirty
+                }
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      "¿Agregar los entrenamientos y plantillas del modo local a tu cuenta? Los datos de la nube y los originales locales se conservarán.",
+                    )
+                  )
+                    migrateLocal();
+                }}
+              >
+                Copiar datos locales a mi cuenta
+              </button>
+            )}
+          </section>
+        )}
         {storageError && (
           <p className="storage-error" role="alert">
             {storageError}
@@ -702,6 +793,10 @@ export default function HomePage() {
               </button>
             </div>
             <div className="settings-body">
+              <AccountPanel
+                pending={!!syncState?.dirty || syncState?.status === "syncing"}
+                onContinueGuest={() => setModal(null)}
+              />
               <div className="theme-setting">
                 <span className="section-kicker">APARIENCIA</span>
                 <div
@@ -756,8 +851,9 @@ export default function HomePage() {
                 </label>
               </div>
               <p className="settings-note">
-                Tus entrenamientos se guardan en este dispositivo. Exportá un
-                respaldo cuando quieras cambiar de navegador.
+                {user
+                  ? "Tus entrenamientos se sincronizan con tu cuenta cuando hay conexión. Exportá JSON para guardar un respaldo independiente."
+                  : "Estás en modo local: los datos permanecen en este navegador. Iniciá sesión y copiá los datos a tu cuenta para verlos en otros dispositivos."}
               </p>
               <button
                 className="danger-action"
