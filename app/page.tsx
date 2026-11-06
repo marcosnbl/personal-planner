@@ -1,6 +1,8 @@
 "use client";
 
-import { ChangeEvent, useEffect, useMemo, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
+import { useDialog } from "@/hooks/use-dialog";
+import { createDeferredView } from "@/components/deferred-view";
 
 import {
   ThemeMode,
@@ -20,15 +22,38 @@ import {
 
 import { Icon } from "@/components/icon";
 import { AccountProvider, useAccount } from "@/components/account-provider";
-import { AccountPanel } from "@/components/account-panel";
 import { InstallApp } from "@/components/install-app";
 import { PlanningTools } from "@/components/planning-tools";
-import { TrainingStatistics } from "@/components/training-statistics";
 import { TrainingCalendar } from "@/components/training-calendar";
-import { MoveDialog } from "@/components/move-dialog";
-import { WorkoutEditor } from "@/components/workout-editor";
+import {
+  loadWorkoutEditor,
+  loadMoveDialog,
+  loadTrainingStatistics,
+  loadAccountPanel,
+} from "@/components/deferred-views";
+import { PlannerSkeleton } from "@/components/planner-skeleton";
 import { useTrainingStore } from "@/hooks/use-training-store";
 import { copyWeek, plannedCopy, parseBackup, relocate } from "@/lib/training";
+
+const AccountPanel = createDeferredView(
+  loadAccountPanel,
+  (props) => props.onContinueGuest,
+);
+const TrainingStatistics = createDeferredView(
+  loadTrainingStatistics,
+  (props) => props.onBack,
+);
+const MoveDialog = createDeferredView(
+  loadMoveDialog,
+  (props) => props.onClose,
+  true,
+);
+const WorkoutEditor = createDeferredView(
+  loadWorkoutEditor,
+  (props) => props.onClose,
+  true,
+);
+
 export default function HomePage() {
   return (
     <AccountProvider>
@@ -36,16 +61,17 @@ export default function HomePage() {
     </AccountProvider>
   );
 }
+
 function AccountBoundary() {
   const { user, ready } = useAccount();
+
   return ready ? (
     <PlannerPage key={user?.id ?? "guest"} />
   ) : (
-    <p className="account-loading" role="status">
-      Abriendo Training planner…
-    </p>
+    <PlannerSkeleton />
   );
 }
+
 function PlannerPage() {
   const { user } = useAccount();
   const {
@@ -77,28 +103,42 @@ function PlannerPage() {
     date?: string;
   } | null>(null);
   const [theme, setTheme] = useState<ThemeMode>("light");
+  const importInput = useRef<HTMLInputElement>(null);
+  useDialog(() => setModal(null), modal === "settings");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem(THEME_KEY);
-    const initialTheme: ThemeMode = savedTheme === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = initialTheme;
+    const initialTheme: ThemeMode =
+      document.documentElement.dataset.theme === "dark" ? "dark" : "light";
     // Hydrate the saved browser preference after the server render.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setTheme(initialTheme);
   }, []);
+
   useEffect(() => {
     if (!hydrated) return;
     document.documentElement.dataset.theme = theme;
-    localStorage.setItem(THEME_KEY, theme);
+    document
+      .querySelector('meta[name="theme-color"]')
+      ?.setAttribute("content", theme === "dark" ? "#191918" : "#ffffff");
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch {
+      /* The selected theme still works when browser storage is blocked. */
+    }
   }, [hydrated, theme]);
+
   useEffect(() => {
     if (!toast) return;
+
     const timer = window.setTimeout(() => setToast(""), 2400);
+
     return () => window.clearTimeout(timer);
   }, [toast]);
+
   useEffect(() => {
     document.body.style.overflow =
       modal || editor || pendingMove || templateSource ? "hidden" : "";
+
     return () => {
       document.body.style.overflow = "";
     };
@@ -110,6 +150,7 @@ function PlannerPage() {
   const defaultNewWorkoutDate = dateKey(currentDateInWeek ?? dates[0]);
   const weeklyWorkouts = useMemo(() => {
     const keys = new Set(dates.map(dateKey));
+
     return workouts.filter((w) => keys.has(w.date));
   }, [dates, workouts]);
   const completed = weeklyWorkouts.filter((w) => w.status === "completed");
@@ -141,22 +182,27 @@ function PlannerPage() {
   const planProgress = plannedKm
     ? Math.min(100, (actualKm / plannedKm) * 100)
     : 0;
+
   function notify(message: string) {
     setToast(message);
   }
+
   function moveWorkout(id: string, destination?: string) {
     const source = workouts.find((w) => w.id === id);
+
     if (!source || destination === source.date) return;
     if (
       !destination ||
       workouts.some((w) => w.date === destination && w.id !== id)
     ) {
       setPendingMove({ id, date: destination });
+
       return;
     }
     setWorkouts((current) => relocate(current, id, destination));
     notify("Sesión movida");
   }
+
   function openWorkout(date = dateKey(new Date()), id?: string) {
     setEditor(
       id
@@ -164,6 +210,7 @@ function PlannerPage() {
         : { ...emptyWorkout(date), id: "" },
     );
   }
+
   function saveWorkoutRecord(workout: Workout) {
     setWorkouts((current) =>
       current.some((w) => w.id === workout.id)
@@ -174,6 +221,7 @@ function PlannerPage() {
     setEditor(null);
     notify("Sesión guardada");
   }
+
   function quickToggle(id: string) {
     setWorkouts((current) =>
       current.map((w) => (w.id === id ? toggleWorkoutStatus(w) : w)),
@@ -182,14 +230,17 @@ function PlannerPage() {
       "Estado actualizado. Al completar se confirman los valores planificados.",
     );
   }
+
   function deleteWorkout() {
     if (!editor?.id) return;
     setWorkouts((current) => current.filter((w) => w.id !== editor.id));
     setEditor(null);
     notify("Sesión eliminada");
   }
+
   function exportFile(kind: "json" | "csv") {
     let content: string, mime: string, filename: string;
+
     if (kind === "json") {
       content = JSON.stringify({ version: 2, workouts, templates }, null, 2);
       mime = "application/json";
@@ -231,28 +282,36 @@ function PlannerPage() {
           .map((v) => `"${String(v ?? "").replaceAll('"', '""')}"`)
           .join(","),
       );
+
       content = [headers.join(","), ...rows].join("\r\n");
       mime = "text/csv;charset=utf-8";
       filename = "training-planner-entrenamientos.csv";
     }
+
     const url = URL.createObjectURL(new Blob([content], { type: mime }));
     const anchor = document.createElement("a");
+
     anchor.href = url;
     anchor.download = filename;
     anchor.click();
     URL.revokeObjectURL(url);
     notify(`Respaldo ${kind.toUpperCase()} descargado`);
   }
+
   function importFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
+
     if (!file) return;
+
     const reader = new FileReader();
+
     reader.onload = () => {
       try {
         const data = parseBackup(String(reader.result));
+
         if (
           !window.confirm(
-            "Se reemplazarán las sesiones actuales por las del respaldo. Podés deshacer los cambios de sesiones. ¿Continuar?",
+            "Se reemplazarán las sesiones y las plantillas actuales por las del respaldo. Deshacer recupera solo las sesiones, no las plantillas. Exportá antes un JSON si querés conservarlas. ¿Continuar?",
           )
         )
           return;
@@ -267,8 +326,12 @@ function PlannerPage() {
     reader.readAsText(file);
     event.target.value = "";
   }
+
   return (
     <div className="app-shell">
+      <a className="skip-link" href="#main-content">
+        Saltar al contenido
+      </a>
       <aside className="sidebar">
         <a className="brand" href="#">
           <span className="brand-mark" aria-hidden="true">
@@ -290,12 +353,14 @@ function PlannerPage() {
         <nav className="side-nav" aria-label="Navegación principal">
           <button
             className={`nav-item ${view === "week" ? "active" : ""}`}
+            aria-pressed={view === "week"}
             onClick={() => setView("week")}
           >
             <span className="nav-icon">▦</span>Mi semana
           </button>
           <button
             className={`nav-item ${view === "stats" ? "active" : ""}`}
+            aria-pressed={view === "stats"}
             onClick={() => setView("stats")}
           >
             <span className="nav-icon">◴</span>Estadísticas
@@ -329,7 +394,7 @@ function PlannerPage() {
           </div>
         </div>
       </aside>
-      <main className="main-content">
+      <main className="main-content" id="main-content" tabIndex={-1}>
         <header className="topbar">
           <div className="mobile-brand">
             <span className="brand-mark" aria-hidden="true">
@@ -407,6 +472,20 @@ function PlannerPage() {
             </button>
           </div>
         </header>
+        <nav className="mobile-navigation" aria-label="Navegación móvil">
+          <button
+            aria-pressed={view === "week"}
+            onClick={() => setView("week")}
+          >
+            Mi semana
+          </button>
+          <button
+            aria-pressed={view === "stats"}
+            onClick={() => setView("stats")}
+          >
+            Estadísticas
+          </button>
+        </nav>
         {user && (
           <section className="sync-banner" aria-label="Sincronización">
             <span role="status">
@@ -672,6 +751,9 @@ function PlannerPage() {
                   className="view-toggle"
                   onClick={() => setLayout(layout === "grid" ? "list" : "grid")}
                   title="Cambiar vista"
+                  aria-label={
+                    layout === "grid" ? "Mostrar lista" : "Mostrar cuadrícula"
+                  }
                 >
                   <span className={layout === "grid" ? "selected" : ""}>▦</span>
                   <span className={layout === "list" ? "selected" : ""}>
@@ -699,6 +781,7 @@ function PlannerPage() {
               onCopyWeek={(date) => {
                 try {
                   const destination = mondayOf(new Date(date + "T12:00:00"));
+
                   setWorkouts(copyWeek(workouts, weekStart, destination));
                   setWeekStart(destination);
                   notify("Semana copiada como planificación");
@@ -840,15 +923,20 @@ function PlannerPage() {
                 >
                   ↓ Exportar CSV
                 </button>
-                <label className="secondary-button import-button">
+                <button
+                  type="button"
+                  className="secondary-button import-button"
+                  onClick={() => importInput.current?.click()}
+                >
                   ↑ Cargar JSON
-                  <input
-                    type="file"
-                    accept=".json,application/json"
-                    hidden
-                    onChange={importFile}
-                  />
-                </label>
+                </button>
+                <input
+                  ref={importInput}
+                  type="file"
+                  accept=".json,application/json"
+                  hidden
+                  onChange={importFile}
+                />
               </div>
               <p className="settings-note">
                 {user

@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+
+import { useMemo, useState } from "react";
 import {
   DISCIPLINES,
   TYPE_INFO,
@@ -13,13 +14,16 @@ import {
   type Discipline,
   type Workout,
 } from "@/lib/training";
+
 type Metric = "km" | "minutes" | "elevation" | "rpe";
+
 const labels: Record<Metric, string> = {
   km: "Kilómetros",
   minutes: "Tiempo (min)",
   elevation: "Desnivel (m D+)",
   rpe: "Esfuerzo percibido (RPE)",
 };
+
 export function TrainingStatistics({
   workouts,
   onBack,
@@ -29,22 +33,47 @@ export function TrainingStatistics({
 }) {
   const [discipline, setDiscipline] = useState<Discipline>("run");
   const [metric, setMetric] = useState<Metric>("km");
-  const weeks = Array.from({ length: 12 }, (_, i) => {
-    const start = plusDays(mondayOf(new Date()), -7 * (11 - i));
-    const keys = new Set(weekDays(start).map(dateKey));
-    return {
-      start,
-      totals: summarize(
-        workouts.filter((w) => keys.has(w.date)),
-        discipline,
-      ),
-    };
-  });
+  const currentWeekKey = dateKey(mondayOf(new Date()));
+
+  const byDate = useMemo(() => {
+    const grouped = new Map<string, Workout[]>();
+
+    for (const workout of workouts) {
+      const items = grouped.get(workout.date);
+      if (items) items.push(workout);
+      else grouped.set(workout.date, [workout]);
+    }
+
+    return grouped;
+  }, [workouts]);
+
+  const weeks = useMemo(() => {
+    const currentWeek = new Date(currentWeekKey + "T12:00:00");
+
+    return Array.from({ length: 12 }, (_, index) => {
+      const start = plusDays(currentWeek, -7 * (11 - index));
+      const items = weekDays(start).flatMap(
+        (date) => byDate.get(dateKey(date)) ?? [],
+      );
+
+      return { start, totals: summarize(items, discipline) };
+    });
+  }, [byDate, currentWeekKey, discipline]);
+
+  const currentTotals = useMemo(() => {
+    const currentWeek = new Date(currentWeekKey + "T12:00:00");
+    const items = weekDays(currentWeek).flatMap(
+      (date) => byDate.get(dateKey(date)) ?? [],
+    );
+
+    return new Map(DISCIPLINES.map((type) => [type, summarize(items, type)]));
+  }, [byDate, currentWeekKey]);
+
   const max =
     metric === "rpe"
       ? 10
-      : Math.max(1, ...weeks.map((w) => w.totals[metric] ?? 0));
-  const recentKeys = new Set(weekDays(mondayOf(new Date())).map(dateKey));
+      : Math.max(1, ...weeks.map((week) => week.totals[metric] ?? 0));
+
   return (
     <section className="view-section">
       <div className="page-heading">
@@ -129,10 +158,8 @@ export function TrainingStatistics({
           </thead>
           <tbody>
             {DISCIPLINES.filter((d) => d !== "rest").map((d) => {
-              const t = summarize(
-                workouts.filter((w) => recentKeys.has(w.date)),
-                d,
-              );
+              const t = currentTotals.get(d)!;
+
               return (
                 <tr key={d}>
                   <th>{TYPE_INFO[d].label}</th>

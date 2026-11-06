@@ -1,7 +1,9 @@
 "use client";
+
 import { useDialog } from "@/hooks/use-dialog";
 import { useState } from "react";
 import { TYPE_INFO, validDate, type Workout } from "@/lib/training";
+
 export function MoveDialog({
   source,
   date,
@@ -16,12 +18,14 @@ export function MoveDialog({
   onClose: () => void;
 }) {
   useDialog(onClose);
+
   const [destination, setDestination] = useState(date ?? source.date);
   const [choice, setChoice] = useState("move");
   const [swapId, setSwapId] = useState("");
   const targets = workouts.filter(
     (w) => w.date === destination && w.id !== source.id,
   );
+
   return (
     <div className="modal-backdrop open">
       <section

@@ -1,17 +1,22 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { getSupabase } from "@/lib/supabase/client";
 import { completeGoogleCallback } from "@/lib/google-auth";
+
 export default function AuthCallback() {
   const router = useRouter();
   const [error, setError] = useState("");
+
   useEffect(() => {
     let active = true;
+
     async function finish() {
       try {
         const client = getSupabase();
+
         if (!client)
           throw new Error(
             "No está configurada la conexión con Supabase. Podés continuar sin cuenta.",
@@ -29,11 +34,14 @@ export default function AuthCallback() {
         );
       }
     }
+
     void finish();
+
     return () => {
       active = false;
     };
   }, [router]);
+
   return (
     <main className="auth-callback">
       <section className="auth-callback-card">

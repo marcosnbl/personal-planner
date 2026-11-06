@@ -1,4 +1,47 @@
 /* Training planner: warm paper, quiet typography and a single action color. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: 10000;
+  padding: 12px 16px;
+  background: var(--card);
+  color: var(--text);
+  transform: translateY(-160%);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.mobile-navigation {
+  display: none;
+}
+
+.workout-dialog,
+.settings-dialog {
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 760px) {
+  .mobile-navigation {
+    display: flex;
+    gap: 8px;
+    padding: 0 18px 12px;
+  }
+  .mobile-navigation button {
+    flex: 1;
+    min-height: 44px;
+    background: var(--card);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .mobile-navigation button[aria-pressed="true"],
+  .mobile-navigation button:hover {
+    background: var(--card-hi);
+  }
+}
+
 :root,
 html[data-theme="light"] {
   color-scheme: light;
@@ -19,6 +62,7 @@ html[data-theme="light"] {
   --font: "Inter", "Segoe UI", Arial, sans-serif;
   --display: var(--font);
 }
+
 html[data-theme="dark"] {
   color-scheme: dark;
   --bg: #191918;
@@ -36,15 +80,18 @@ html[data-theme="dark"] {
   --violet: #deddd5;
   --action: #fc5200;
 }
+
 :root body {
   line-height: 1.5;
 }
+
 :root button,
 :root input,
 :root select,
 :root textarea {
   font-family: var(--font);
 }
+
 :root button,
 :root input,
 :root select,
@@ -60,6 +107,7 @@ html[data-theme="dark"] {
 :root .theme-switch {
   border-radius: 4px;
 }
+
 :root .sidebar,
 :root .coach-card,
 :root .progress-panel,
@@ -75,30 +123,37 @@ html[data-theme="dark"] {
   border-radius: 0;
   box-shadow: none;
 }
+
 :root .sidebar {
   background: var(--surface);
 }
+
 :root .main-content {
   max-width: 1448px;
 }
+
 :root .view-section {
   max-width: 1200px;
   margin-inline: auto;
 }
+
 :root .brand,
 :root .mobile-brand {
   font-weight: 600;
   letter-spacing: normal;
 }
+
 :root .brand-mark {
   background: var(--text);
   color: var(--bg);
   transform: none;
 }
+
 :root .brand-dot,
 :root .heading-period {
   color: var(--text);
 }
+
 :root .side-label,
 :root .section-kicker,
 :root .eyebrow,
@@ -111,16 +166,19 @@ html[data-theme="dark"] {
   font-weight: 400;
   color: var(--muted);
 }
+
 :root .nav-item {
   color: var(--muted);
   font-weight: 400;
 }
+
 :root .nav-item:hover,
 :root .nav-item.active {
   background: var(--card-hi);
   color: var(--text);
   box-shadow: none;
 }
+
 :root .coach-orbit,
 :root .avatar,
 :root .rpe-emoji {
@@ -129,6 +187,7 @@ html[data-theme="dark"] {
   border-color: var(--border);
   border-radius: 4px;
 }
+
 :root .coach-card p,
 :root .profile-copy span,
 :root .breadcrumb,
@@ -152,12 +211,14 @@ html[data-theme="dark"] {
 :root .rpe-number span {
   color: var(--muted);
 }
+
 :root .breadcrumb strong,
 :root .day-number,
 :root .kpi-value > span,
 :root .weekly-discipline-breakdown b {
   color: var(--text);
 }
+
 :root .topbar,
 :root .profile,
 :root .day-bottom,
@@ -165,6 +226,7 @@ html[data-theme="dark"] {
 :root .chart-gridlines i {
   border-color: var(--border);
 }
+
 :root .primary-button {
   background: var(--action);
   color: #fff;
@@ -174,43 +236,52 @@ html[data-theme="dark"] {
   font-size: 14px;
   font-weight: 600;
 }
+
 :root .primary-button:hover {
   background: #dc4700;
   border-color: #dc4700;
   box-shadow: none;
 }
+
 :root .page-heading h1 {
   font-size: clamp(32px, 4vw, 44px);
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: normal;
 }
+
 :root h2,
 :root h3,
 :root strong {
   font-weight: 600;
 }
+
 :root .progress-panel {
   background: var(--surface);
   padding: 24px;
 }
+
 :root .progress-title strong {
   font-weight: 600;
 }
+
 :root .progress-title > span:nth-child(2),
 :root .weekly-discipline-breakdown {
   color: var(--muted);
 }
+
 :root .progress-track {
   background: var(--border);
   border-radius: 0;
 }
+
 :root .progress-fill,
 :root .bar {
   background: var(--text);
   border-radius: 0;
   box-shadow: none;
 }
+
 :root .progress-dot,
 :root .live-dot,
 :root .status-dot,
@@ -218,66 +289,80 @@ html[data-theme="dark"] {
   background: var(--muted);
   box-shadow: none;
 }
+
 :root .kpi-card {
   padding: 22px;
 }
+
 :root .kpi-icon {
   color: var(--text);
   background: var(--surface);
   border-radius: 4px;
 }
+
 :root .tiny-line,
 :root .purple-line,
 :root .chart-legend span {
   background: var(--muted);
 }
+
 :root .week-chip,
 :root .discipline-badge {
   background: var(--surface);
   color: var(--muted);
   border: 1px solid var(--border);
 }
+
 :root .day-card {
   transition:
     border-color 0.2s,
     background-color 0.2s;
 }
+
 :root .day-card:hover {
   background: var(--surface);
   border-color: var(--muted);
   transform: none;
   box-shadow: none;
 }
+
 :root .day-card.completed {
   background: var(--surface);
   border-color: var(--border);
 }
+
 :root .day-card.today {
   border-color: var(--text);
   box-shadow: none;
 }
+
 :root .today .day-number {
   background: var(--text);
   color: var(--bg);
 }
+
 :root .today-tag,
 :root .status-pill,
 :root .status-pill.done,
 :root .status-pill.skipped {
   color: var(--muted);
 }
+
 :root .status-pill.done .status-dot,
 :root .status-pill.skipped .status-dot {
   background: var(--text);
 }
+
 :root .day-metrics .planned,
 :root .day-metrics .divider {
   color: var(--faint);
 }
+
 :root .workout-name {
   font-size: 16px;
   font-weight: 600;
 }
+
 :root .round-control,
 :root .week-picker,
 :root .filter-select,
@@ -294,10 +379,12 @@ html[data-theme="dark"] {
   border-color: var(--border);
   box-shadow: none;
 }
+
 :root .secondary-button {
   border-color: var(--text);
   font-weight: 600;
 }
+
 :root .round-control:hover,
 :root .icon-button:hover,
 :root .quick-complete:hover,
@@ -306,11 +393,13 @@ html[data-theme="dark"] {
   border-color: var(--text);
   color: var(--text);
 }
+
 :root .completed .quick-complete {
   background: var(--text);
   color: var(--bg);
   border-color: var(--text);
 }
+
 :root .view-toggle .selected,
 :root .mode-option.active,
 :root .discipline-choice.active,
@@ -320,10 +409,12 @@ html[data-theme="dark"] {
   border-color: var(--text);
   border-radius: 4px;
 }
+
 :root .mode-option,
 :root .theme-switch button {
   color: var(--muted);
 }
+
 :root .field input,
 :root .field select,
 :root .field textarea,
@@ -333,23 +424,28 @@ html[data-theme="dark"] {
   color: var(--text);
   font-size: 14px;
 }
+
 :root .field > input,
 :root .field > select,
 :root .input-wrap {
   min-height: 44px;
 }
+
 :root .field input::placeholder,
 :root .field textarea::placeholder {
   color: var(--faint);
 }
+
 :root .field select option,
 :root .filter-select option {
   background: var(--card);
   color: var(--text);
 }
+
 :root .filter-select select {
   color: var(--text);
 }
+
 :root .field input:focus,
 :root .field select:focus,
 :root .field textarea:focus,
@@ -357,46 +453,57 @@ html[data-theme="dark"] {
   border-color: var(--text);
   box-shadow: none;
 }
+
 :root :focus-visible {
   outline: 2px solid var(--text);
   outline-offset: 3px;
 }
+
 :root .form-divider i {
   background: var(--border);
 }
+
 :root .dialog-actions {
   background: var(--card);
   border-color: var(--border);
 }
+
 :root .modal-backdrop {
   background: #0008;
   backdrop-filter: none;
 }
+
 :root .delete-button {
   color: var(--text);
   background: var(--card);
   border-color: var(--border);
 }
+
 :root .danger-action {
   color: var(--text);
   text-decoration: underline;
 }
+
 :root .text-action,
 :root .back-link {
   color: var(--text);
   text-decoration: underline;
 }
+
 :root .empty-plan {
   border-color: var(--border);
   color: var(--muted);
 }
+
 :root .empty-plan strong {
   color: var(--text);
 }
+
 :root .theme-setting {
   display: grid;
   gap: 8px;
 }
+
 :root .theme-switch {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -404,17 +511,21 @@ html[data-theme="dark"] {
   gap: 4px;
   border: 1px solid var(--border);
 }
+
 :root .theme-switch button {
   min-height: 40px;
   border: 0;
   background: transparent;
 }
+
 :root .theme-switch button.active {
   background: var(--card-hi);
 }
+
 :root input[type="range"] {
   accent-color: var(--text);
 }
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -428,10 +539,12 @@ html[data-theme="dark"] {
 :root .day-card[draggable="true"] {
   cursor: grab;
 }
+
 :root .day-card.dragging {
   opacity: 0.45;
   cursor: grabbing;
 }
+
 :root .day-card.drop-target {
   outline: 2px dashed var(--text);
   outline-offset: -5px;
@@ -447,14 +560,17 @@ html[data-theme="dark"] {
   border: 1px solid var(--border);
   font-size: 21px;
 }
+
 @media (max-width: 600px) {
   :root .topbar {
     flex-wrap: wrap;
     gap: 12px;
   }
+
   :root .top-actions {
     flex-wrap: wrap;
   }
+
   :root .header-theme-toggle {
     width: 34px;
     min-width: 34px;
@@ -478,22 +594,27 @@ html[data-theme="dark"] {
   user-select: none;
   -webkit-user-select: none;
 }
+
 @media (hover: none) and (pointer: coarse) {
   :root .drag-handle {
     display: inline-grid;
   }
+
   :root .day-top {
     min-height: 44px;
     gap: 8px;
   }
+
   :root .day-number {
     flex-shrink: 0;
   }
 }
+
 :root .drag-handle:active {
   cursor: grabbing;
   background: var(--card-hi);
 }
+
 :root .day-card.dragging {
   user-select: none;
 }
@@ -502,20 +623,24 @@ html[data-theme="dark"] {
 :root .multi-calendar {
   align-items: start;
 }
+
 :root .calendar-day {
   min-width: 0;
   border: 1px solid var(--border);
   background: var(--card);
   padding: 14px;
 }
+
 :root .calendar-day.today {
   border-color: var(--text);
 }
+
 :root .calendar-day.drop-target {
   outline: 2px dashed var(--text);
   outline-offset: -5px;
   background: var(--card-hi);
 }
+
 :root .session-card {
   position: relative;
   margin-top: 12px;
@@ -523,14 +648,17 @@ html[data-theme="dark"] {
   border-top: 1px solid var(--border);
   cursor: grab;
 }
+
 :root .session-card.dragging {
   opacity: 0.4;
 }
+
 :root .session-heading {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 :root .session-title {
   flex: 1;
   min-width: 0;
@@ -543,9 +671,11 @@ html[data-theme="dark"] {
   text-align: left;
   overflow-wrap: anywhere;
 }
+
 :root .session-title:hover {
   text-decoration: underline;
 }
+
 :root .session-metrics {
   display: flex;
   flex-wrap: wrap;
@@ -554,12 +684,14 @@ html[data-theme="dark"] {
   font-size: 12px;
   color: var(--muted);
 }
+
 :root .session-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
+
 :root .session-actions button,
 :root .session-actions summary,
 :root .add-session {
@@ -571,13 +703,16 @@ html[data-theme="dark"] {
   border-radius: 4px;
   font-size: 12px;
 }
+
 :root .session-actions summary {
   cursor: pointer;
   list-style: none;
 }
+
 :root .session-actions summary::-webkit-details-marker {
   display: none;
 }
+
 :root .session-menu {
   position: absolute;
   right: 0;
@@ -589,62 +724,75 @@ html[data-theme="dark"] {
   display: grid;
   gap: 4px;
 }
+
 :root .session-menu button {
   text-align: left;
 }
+
 :root .session-menu button:hover {
   background: var(--card-hi);
 }
+
 :root .day-empty {
   min-height: 60px;
   font-size: 12px;
   color: var(--muted);
 }
+
 :root .add-session {
   width: 100%;
   margin-top: 12px;
   border-style: dashed;
 }
+
 :root .planning-tools {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
   margin: 0 0 20px;
 }
+
 :root .planning-tools > .secondary-button {
   min-height: 40px;
   padding: 8px 12px;
 }
+
 :root .template-library {
   flex-basis: 100%;
   padding: 20px;
   border: 1px solid var(--border);
   background: var(--surface);
 }
+
 :root .template-library p,
 :root .template-library h3 {
   margin: 8px 0 12px;
 }
+
 :root .template-library > button {
   margin: 0 8px 8px 0;
   min-height: 40px;
   padding: 8px 12px;
 }
+
 :root .template-row {
   display: flex;
   gap: 8px;
   margin-bottom: 8px;
 }
+
 :root .template-row button {
   min-height: 40px;
   background: var(--card);
   border: 1px solid var(--border);
   padding: 8px;
 }
+
 :root .template-row button:first-child {
   flex: 1;
   text-align: left;
 }
+
 :root .move-choice {
   display: grid;
   gap: 14px;
@@ -652,65 +800,79 @@ html[data-theme="dark"] {
   padding: 16px;
   border: 1px solid var(--border);
 }
+
 :root .move-choice > label {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 :root .move-choice > .field {
   display: grid;
 }
+
 :root button:disabled {
   opacity: 0.45;
   cursor: not-allowed;
 }
+
 :root .top-actions > .secondary-button {
   min-height: 38px;
   padding: 6px 10px;
 }
+
 :root .editor-error {
   color: var(--text);
 }
+
 :root .storage-error {
   margin: 20px;
   padding: 16px;
   border: 2px solid var(--text);
 }
+
 :root .table-scroll {
   overflow-x: auto;
   margin: 28px 0;
 }
+
 :root .training-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 13px;
   text-align: left;
 }
+
 :root .training-table caption {
   text-align: left;
   font-size: 16px;
   font-weight: 600;
   padding: 12px 0;
 }
+
 :root .training-table th,
 :root .training-table td {
   padding: 12px;
   border-bottom: 1px solid var(--border);
   white-space: nowrap;
 }
+
 :root .training-table thead {
   background: var(--surface);
 }
+
 :root .stats-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
   margin-bottom: 24px;
 }
+
 :root .stats-controls .field {
   flex: 1;
   min-width: 180px;
 }
+
 :root .discipline-chart {
   display: flex;
   align-items: stretch;
@@ -718,12 +880,14 @@ html[data-theme="dark"] {
   overflow-x: auto;
   padding: 20px 0;
 }
+
 :root .discipline-bar-group {
   flex: 1;
   min-width: 42px;
   text-align: center;
   font-size: 11px;
 }
+
 :root .discipline-bar-track {
   height: 180px;
   display: flex;
@@ -731,34 +895,42 @@ html[data-theme="dark"] {
   margin: 8px 0;
   border-bottom: 1px solid var(--border);
 }
+
 :root .discipline-bar-track > div {
   width: 100%;
   background: var(--text);
 }
+
 :root .install-help {
   font-size: 12px;
   color: var(--muted);
 }
+
 :root .list-mode .calendar-day {
   display: grid;
   grid-template-columns: 80px 1fr;
   gap: 12px;
 }
+
 :root .list-mode .calendar-day > .day-top {
   grid-row: 1 / span 20;
   align-self: start;
 }
+
 :root .list-mode .session-card {
   margin-top: 0;
 }
+
 @media (max-width: 600px) {
   :root .list-mode .calendar-day {
     display: block;
   }
+
   :root .session-actions button,
   :root .session-actions summary {
     min-height: 44px;
   }
+
   :root .session-heading .drag-handle {
     flex-shrink: 0;
   }
@@ -777,10 +949,12 @@ html[data-theme="dark"] {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
+
 :root .ui-icon {
   display: block;
   flex-shrink: 0;
 }
+
 @media (max-width: 760px) {
   :root .topbar {
     height: auto;
@@ -791,9 +965,11 @@ html[data-theme="dark"] {
     gap: 16px;
     padding: 16px 18px;
   }
+
   :root .mobile-brand {
     min-height: 28px;
   }
+
   :root .top-actions {
     display: grid;
     grid-template-columns: auto 44px minmax(0, 1fr) 44px;
@@ -801,14 +977,17 @@ html[data-theme="dark"] {
     width: 100%;
     min-width: 0;
   }
+
   :root .top-actions > .install-button {
     grid-column: 1 / -1;
   }
+
   :root .top-actions > .secondary-button {
     min-height: 44px;
     padding: 6px 8px;
     font-size: 12px;
   }
+
   :root .top-actions > .primary-button {
     height: auto;
     min-height: 44px;
@@ -818,54 +997,68 @@ html[data-theme="dark"] {
     line-height: 1.3;
     font-size: 12px;
   }
+
   :root .top-actions > .icon-button {
     width: 44px;
     min-width: 44px;
     height: 44px;
   }
+
   :root .view-section {
     padding-top: 24px;
     padding-bottom: max(32px, env(safe-area-inset-bottom));
   }
+
   :root .progress-panel {
     padding: 18px;
   }
+
   :root .progress-top {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
+
   :root .progress-caption {
     max-width: none;
     font-size: 12px;
   }
+
   :root .progress-bottom {
     flex-direction: column;
     gap: 6px;
     font-size: 11px;
   }
+
   :root .progress-track {
     margin-block: 16px 12px;
   }
+
   :root .progress-dot {
     flex-shrink: 0;
   }
+
   :root .kpi-card {
     padding: 14px;
   }
+
   :root .kpi-head {
     gap: 8px;
     font-size: 10px;
   }
+
   :root .kpi-head > span:first-child {
     min-width: 0;
   }
+
   :root .kpi-icon {
     flex-shrink: 0;
   }
+
   :root .kpi-foot {
     line-height: 1.5;
   }
+
   :root .field input:not([type="checkbox"]):not([type="range"]),
   :root .field select,
   :root .field textarea {
@@ -878,13 +1071,16 @@ html[data-theme="dark"] {
   padding-bottom: 20px;
   margin-bottom: 20px;
 }
+
 :root .account-panel form {
   display: grid;
   gap: 12px;
 }
+
 :root .account-panel strong {
   overflow-wrap: anywhere;
 }
+
 :root .sync-banner {
   display: flex;
   flex-wrap: wrap;
@@ -896,17 +1092,21 @@ html[data-theme="dark"] {
   background: var(--surface);
   font-size: 13px;
 }
+
 :root .sync-banner button {
   min-height: 40px;
   padding: 8px 12px;
 }
+
 :root .account-loading {
   padding: 32px;
 }
+
 @media (max-width: 760px) {
   :root .top-actions > .account-header-button {
     grid-column: 1 / -1;
   }
+
   :root .account-panel input {
     font-size: 16px;
   }
@@ -916,10 +1116,12 @@ html[data-theme="dark"] {
   display: grid;
   gap: 12px;
 }
+
 :root .account-actions > button {
   min-height: 44px;
   padding: 10px 16px;
 }
+
 :root .google-signin {
   display: flex;
   align-items: center;
@@ -931,12 +1133,15 @@ html[data-theme="dark"] {
   border-radius: 4px;
   font-weight: 600;
 }
+
 :root .google-signin svg {
   flex-shrink: 0;
 }
+
 :root .google-signin:hover {
   background: #f2f2f2;
 }
+
 :root .auth-callback {
   min-height: 100dvh;
   display: grid;
@@ -944,18 +1149,26 @@ html[data-theme="dark"] {
   padding: 24px;
   background: var(--bg);
 }
+
 :root .auth-callback-card {
   width: min(100%, 480px);
   padding: 28px;
   border: 1px solid var(--border);
 }
+
 :root .auth-callback-card h1 {
   font-size: 28px;
   line-height: 1.2;
 }
+
 :root .auth-callback-card .secondary-button {
   display: inline-flex;
   padding: 12px 16px;
   margin-top: 16px;
   text-decoration: none;
+}
+
+:root .planner-placeholder {
+  min-height: 110px;
+  background: var(--surface);
 }

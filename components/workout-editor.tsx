@@ -1,6 +1,7 @@
 "use client";
+
 import { useDialog } from "@/hooks/use-dialog";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import {
   Workout,
   Discipline,
@@ -12,6 +13,7 @@ import {
   parseDuration,
   parseBackup,
 } from "@/lib/training";
+
 export function WorkoutEditor({
   initial,
   onSave,
@@ -23,7 +25,6 @@ export function WorkoutEditor({
   onDelete: () => void;
   onClose: () => void;
 }) {
-  useDialog(onClose);
   const editingId = initial.id;
   const [formDate, setFormDate] = useState(initial.date);
   const [type, setType] = useState<Discipline>(initial.type);
@@ -54,14 +55,50 @@ export function WorkoutEditor({
   const [status, setStatus] = useState<Status>(initial.status);
   const [toast, setToast] = useState("");
   const notify = setToast;
+  const formRef = useRef<HTMLFormElement>(null);
+  const [dirty, setDirty] = useState(false);
+  const [durationError, setDurationError] = useState<"plan" | "log" | null>(
+    null,
+  );
+  const invalidDurationRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (durationError) invalidDurationRef.current?.focus();
+  }, [durationError]);
+
+  function requestClose() {
+    if (!dirty || window.confirm("Tenés cambios sin guardar. ¿Descartarlos?"))
+      onClose();
+  }
+
+  useDialog(requestClose);
+
+  useEffect(() => {
+    if (!dirty) return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty]);
+
   function saveWorkout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
     const plannedMinutes = parseDuration(plannedDuration),
       actualMinutes = parseDuration(actualDuration);
+
     if (plannedMinutes === null || actualMinutes === null) {
+      const invalidMode = plannedMinutes === null ? "plan" : "log";
+      setMode(invalidMode);
+      setDurationError(invalidMode);
+      if (invalidMode === mode) invalidDurationRef.current?.focus();
       notify("Usá minutos (90) o el formato HH:MM:SS (1:30:00)");
+
       return;
     }
+    setDurationError(null);
+
     const previous = initial.id ? initial : undefined;
     const completedFromPlan =
       mode === "plan" &&
@@ -90,6 +127,7 @@ export function WorkoutEditor({
       rpe: includeRpe ? rpe : undefined,
       status: mode === "log" && status === "planned" ? "completed" : status,
     };
+
     try {
       parseBackup(JSON.stringify({ version: 2, workouts: [workout] }));
       onSave(workout);
@@ -97,8 +135,10 @@ export function WorkoutEditor({
       notify(
         "Revisá la fecha y las métricas: deben ser valores válidos y no negativos.",
       );
+      formRef.current?.querySelector<HTMLElement>('[role="alert"]')?.focus();
     }
   }
+
   const rpeFace =
     rpe <= 2
       ? "😌"
@@ -109,12 +149,13 @@ export function WorkoutEditor({
           : rpe <= 8
             ? "🥵"
             : "🔥";
+
   return (
     <>
       <div
         className="modal-backdrop open"
         onMouseDown={(e) => {
-          if (e.target === e.currentTarget) onClose();
+          if (e.target === e.currentTarget) requestClose();
         }}
       >
         <section
@@ -134,7 +175,7 @@ export function WorkoutEditor({
             </div>
             <button
               className="close-button"
-              onClick={() => onClose()}
+              onClick={requestClose}
               aria-label="Cerrar"
             >
               ×
@@ -143,29 +184,38 @@ export function WorkoutEditor({
           <div className="mode-switch">
             <button
               className={`mode-option ${mode === "plan" ? "active" : ""}`}
+              aria-pressed={mode === "plan"}
               onClick={() => setMode("plan")}
             >
               ◷ <span>Planificación</span>
             </button>
             <button
               className={`mode-option ${mode === "log" ? "active" : ""}`}
+              aria-pressed={mode === "log"}
               onClick={() => {
                 setMode("log");
+                setDirty(true);
                 if (status === "planned") setStatus("completed");
               }}
             >
               ✓ <span>Registro real</span>
             </button>
           </div>
-          <p role="alert" className="editor-error">
-            {toast}
-          </p>
-          <form onSubmit={saveWorkout}>
+          <form
+            ref={formRef}
+            autoComplete="off"
+            onChange={() => setDirty(true)}
+            onSubmit={saveWorkout}
+          >
+            <p role="alert" tabIndex={-1} className="editor-error">
+              {toast}
+            </p>
             <div className="form-grid">
               <label className="field full-field">
                 DÍA DE ENTRENAMIENTO
                 <input
                   type="date"
+                  name="date"
                   required
                   value={formDate}
                   onChange={(e) => setFormDate(e.target.value)}
@@ -175,6 +225,7 @@ export function WorkoutEditor({
                 TÍTULO DEL ENTRENAMIENTO
                 <input
                   value={workoutTitle}
+                  name="title"
                   onChange={(e) => setWorkoutTitle(e.target.value)}
                   placeholder="Ej. Long Run, Cuestas, Fuerza..."
                 />
@@ -187,7 +238,11 @@ export function WorkoutEditor({
                       key={d}
                       type="button"
                       className={`discipline-choice ${type === d ? "active" : ""}`}
-                      onClick={() => setType(d)}
+                      aria-pressed={type === d}
+                      onClick={() => {
+                        setType(d);
+                        setDirty(true);
+                      }}
                     >
                       {TYPE_INFO[d].icon} {TYPE_INFO[d].label.split(" / ")[0]}
                     </button>
@@ -228,9 +283,22 @@ export function WorkoutEditor({
                         value={plannedDuration}
                         onChange={(e) => setPlannedDuration(e.target.value)}
                         aria-label="Tiempo planificado en minutos o HH:MM:SS"
+                        ref={invalidDurationRef}
+                        name="plannedDuration"
+                        aria-invalid={durationError === "plan"}
+                        aria-describedby={
+                          durationError === "plan"
+                            ? "duration-error-plan"
+                            : undefined
+                        }
                       />
                       <span>min / HH:MM:SS</span>
                     </div>
+                    {durationError === "plan" && (
+                      <span id="duration-error-plan">
+                        Usá minutos (90) o HH:MM:SS (1:30:00).
+                      </span>
+                    )}
                   </label>
                   <label className="field">
                     DESNIVEL POSITIVO <span>(m)</span>
@@ -273,9 +341,22 @@ export function WorkoutEditor({
                         value={actualDuration}
                         onChange={(e) => setActualDuration(e.target.value)}
                         aria-label="Tiempo realizado en minutos o HH:MM:SS"
+                        ref={invalidDurationRef}
+                        name="actualDuration"
+                        aria-invalid={durationError === "log"}
+                        aria-describedby={
+                          durationError === "log"
+                            ? "duration-error-log"
+                            : undefined
+                        }
                       />
                       <span>min / HH:MM:SS</span>
                     </div>
+                    {durationError === "log" && (
+                      <span id="duration-error-log">
+                        Usá minutos (90) o HH:MM:SS (1:30:00).
+                      </span>
+                    )}
                   </label>
                   <label className="field">
                     DESNIVEL POSITIVO <span>(m)</span>
@@ -299,9 +380,12 @@ export function WorkoutEditor({
                       placeholder="Ej. Zapatillas de trail"
                     />
                   </label>
-                  <label className="field full-field">
-                    ESFUERZO PERCIBIDO (RPE)
+                  <div className="field full-field">
+                    <label htmlFor="record-rpe">
+                      Registrar esfuerzo percibido (RPE)
+                    </label>
                     <input
+                      id="record-rpe"
                       type="checkbox"
                       checked={includeRpe}
                       onChange={(e) => setIncludeRpe(e.target.checked)}
@@ -311,6 +395,8 @@ export function WorkoutEditor({
                       <div className="rpe-emoji">{rpeFace}</div>
                       <input
                         type="range"
+                        aria-label="Intensidad del esfuerzo percibido"
+                        aria-valuetext={`${rpe} de 10`}
                         min="1"
                         max="10"
                         disabled={!includeRpe}
@@ -326,7 +412,7 @@ export function WorkoutEditor({
                       <span>Suave</span>
                       <span>Máximo esfuerzo</span>
                     </div>
-                  </label>
+                  </div>
                   <label className="field full-field">
                     NOTAS Y SENSACIONES
                     <textarea
@@ -364,7 +450,7 @@ export function WorkoutEditor({
               <button
                 type="button"
                 className="secondary-button"
-                onClick={() => onClose()}
+                onClick={requestClose}
               >
                 Cancelar
               </button>

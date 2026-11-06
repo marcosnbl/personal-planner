@@ -4,6 +4,7 @@ import {
   startGoogleLogin,
   completeGoogleCallback,
 } from "../lib/google-auth.ts";
+
 function fakeAuth(
   exchange = async () => ({
     data: { session: { user: { id: "A" } } },
@@ -15,11 +16,14 @@ function fakeAuth(
     exchangeCodeForSession: exchange,
   };
 }
+
 test("Google usa el callback del origen actual y no requiere correo ni contraseña", async () => {
   const auth = fakeAuth();
   let request;
+
   auth.signInWithOAuth = async (value) => {
     request = value;
+
     return { data: {}, error: null };
   };
   await startGoogleLogin(auth, "https://planner.vercel.app");
@@ -30,8 +34,10 @@ test("Google usa el callback del origen actual y no requiere correo ni contrase�
   );
   assert.equal(request.options.queryParams.prompt, "select_account");
 });
+
 test("un error al iniciar OAuth se informa al usuario", async () => {
   const auth = fakeAuth();
+
   auth.signInWithOAuth = async () => ({
     data: {},
     error: { message: "private detail" },
@@ -41,13 +47,16 @@ test("un error al iniciar OAuth se informa al usuario", async () => {
     /No se pudo iniciar/,
   );
 });
+
 test("el callback intercambia el código exactamente una vez con dos efectos React", async () => {
   let calls = 0;
   const auth = fakeAuth(async (code) => {
     assert.equal(code, "one-use-code");
     calls++;
+
     return { data: { session: { user: { id: "A" } } }, error: null };
   });
+
   await Promise.all([
     completeGoogleCallback(
       auth,
@@ -60,12 +69,15 @@ test("el callback intercambia el código exactamente una vez con dos efectos Rea
   ]);
   assert.equal(calls, 1);
 });
+
 test("cancelación o callback sin código no intenta crear una sesión", async () => {
   let calls = 0;
   const auth = fakeAuth(async () => {
     calls++;
+
     return { data: { session: {} }, error: null };
   });
+
   await assert.rejects(
     completeGoogleCallback(
       auth,
@@ -79,6 +91,7 @@ test("cancelación o callback sin código no intenta crear una sesión", async (
   );
   assert.equal(calls, 0);
 });
+
 test("código vencido o sesión ausente no se interpreta como login exitoso", async () => {
   await assert.rejects(
     completeGoogleCallback(

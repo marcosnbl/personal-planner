@@ -1,4 +1,5 @@
 "use client";
+
 /* Hydration and persistence synchronize an external browser storage system. */
 /* eslint-disable react-hooks/set-state-in-effect */
 import { useEffect, useRef, useState, type SetStateAction } from "react";
@@ -14,12 +15,14 @@ import {
   emptyDocument,
   SyncEngine,
   mergeLocalData,
+  createSnapshotWriter,
   type TrainingDocument,
   type CachedSnapshot,
   type SyncState,
 } from "@/lib/cloud-sync";
 import { createRemoteStore } from "@/lib/supabase/remote-store";
 import { useAccount } from "@/components/account-provider";
+
 export function useTrainingStore() {
   const { client, user } = useAccount();
   const owner = user?.id;
@@ -29,20 +32,30 @@ export function useTrainingStore() {
   const documentRef = useRef<TrainingDocument>(emptyDocument());
   const engineRef = useRef<SyncEngine | null>(null);
   const safeToSave = useRef(false);
+  const persistSnapshot = useRef<ReturnType<
+    typeof createSnapshotWriter
+  > | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [error, setError] = useState("");
   const [syncState, setSyncState] = useState<SyncState | null>(null);
   const [hasLocalData, setHasLocalData] = useState(false);
   const key = owner ? accountStorageKey(owner) : STORAGE_KEY;
+
   const dispatch = (action: Action) => {
     historyRef.current = historyReducer(historyRef.current, action);
     setHistory(historyRef.current);
   };
+
   function saveLocal(document: TrainingDocument, snapshot?: CachedSnapshot) {
     if (!safeToSave.current) return;
     if (owner && !snapshot) return;
+
     try {
-      localStorage.setItem(key, JSON.stringify(owner ? snapshot : document));
+      if (owner && snapshot) {
+        persistSnapshot.current?.(snapshot);
+      } else {
+        localStorage.setItem(key, JSON.stringify(document));
+      }
       setError("");
     } catch {
       setError(
@@ -50,10 +63,9 @@ export function useTrainingStore() {
       );
     }
   }
+
   function applyRemote(state: SyncState) {
-    if (
-      JSON.stringify(documentRef.current) !== JSON.stringify(state.document)
-    ) {
+    if (documentRef.current !== state.document) {
       documentRef.current = state.document;
       dispatch({ type: "load", items: state.document.workouts });
       setTemplateState(state.document.templates);
@@ -61,13 +73,20 @@ export function useTrainingStore() {
     saveLocal(state.document, state);
     setSyncState(state);
   }
+
   useEffect(() => {
     let engine: SyncEngine | null = null;
+    persistSnapshot.current = createSnapshotWriter((snapshot) => {
+      localStorage.setItem(key, JSON.stringify(snapshot));
+    });
+
     try {
       const raw = localStorage.getItem(key);
       let cached: CachedSnapshot | undefined;
+
       if (raw) {
         const value = JSON.parse(raw);
+
         if (owner) {
           if (
             !Number.isSafeInteger(value.revision) ||
@@ -94,10 +113,13 @@ export function useTrainingStore() {
         dispatch({ type: "load", items: engine.state.document.workouts });
         setTemplateState(engine.state.document.templates);
         setSyncState(engine.state);
+
         try {
           const guest = localStorage.getItem(STORAGE_KEY);
+
           if (guest) {
             const local = parseBackup(guest);
+
             setHasLocalData(
               !!(local.workouts.length || local.templates.length),
             );
@@ -105,6 +127,7 @@ export function useTrainingStore() {
         } catch {
           /* A damaged guest backup must not block the account. */
         }
+
         void engine.sync();
       } else {
         dispatch({ type: "load", items: documentRef.current.workouts });
@@ -116,16 +139,21 @@ export function useTrainingStore() {
         "No se pudo leer el almacenamiento local. El contenido original no se sobrescribirá. Exportá o recuperá un respaldo antes de continuar.",
       );
     }
+
     setHydrated(true);
+
     const sync = () => {
-      if (!document.hidden) void engine?.sync();
+      if (!document.hidden) void engineRef.current?.sync();
     };
+
     const timer = window.setInterval(sync, 15000);
+
     window.addEventListener("online", sync);
     window.addEventListener("focus", sync);
     document.addEventListener("visibilitychange", sync);
+
     return () => {
-      engine?.dispose();
+      engineRef.current?.dispose();
       engineRef.current = null;
       clearInterval(timer);
       window.removeEventListener("online", sync);
@@ -135,6 +163,7 @@ export function useTrainingStore() {
     // The keyed account boundary remounts this store whenever the authenticated owner changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   function commit(document: TrainingDocument) {
     documentRef.current = document;
     if (engineRef.current) {
@@ -142,31 +171,40 @@ export function useTrainingStore() {
       void engineRef.current.sync();
     } else saveLocal(document);
   }
+
   const setWorkouts = (update: SetStateAction<Workout[]>) => {
     const items =
       typeof update === "function"
         ? update(documentRef.current.workouts)
         : update;
+
     dispatch({ type: "change", update: items });
     commit({ ...documentRef.current, workouts: items });
   };
+
   const setTemplates = (update: SetStateAction<WorkoutTemplate[]>) => {
     const next =
       typeof update === "function"
         ? update(documentRef.current.templates)
         : update;
+
     setTemplateState(next);
     commit({ ...documentRef.current, templates: next });
   };
+
   function undo() {
     dispatch({ type: "undo" });
     commit({ ...documentRef.current, workouts: historyRef.current.current });
   }
+
   function migrateLocal() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
+
       if (!raw) return;
+
       const merged = mergeLocalData(documentRef.current, parseBackup(raw));
+
       dispatch({ type: "change", update: merged.workouts });
       setTemplateState(merged.templates);
       commit(merged);
@@ -177,6 +215,7 @@ export function useTrainingStore() {
       );
     }
   }
+
   return {
     workouts: history.current,
     setWorkouts,

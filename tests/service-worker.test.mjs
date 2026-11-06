@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+
 function worker() {
   const listeners = {};
   const puts = [];
@@ -11,6 +12,7 @@ function worker() {
       listeners[type] = callback;
     },
   };
+
   vm.runInNewContext(
     readFileSync(new URL("../public/sw.js", import.meta.url), "utf8"),
     {
@@ -24,11 +26,14 @@ function worker() {
       },
     },
   );
+
   return { listeners, puts };
 }
+
 test("la PWA no intercepta ni cachea callbacks de autenticación", () => {
   const { listeners, puts } = worker();
   let intercepted = false;
+
   listeners.fetch({
     request: {
       url: "https://planner.test/auth/callback?code=one-use",
@@ -42,11 +47,14 @@ test("la PWA no intercepta ni cachea callbacks de autenticación", () => {
   assert.equal(intercepted, false);
   assert.deepEqual(puts, []);
 });
+
 test("solo la navegación raíz sin parámetros actualiza el shell offline", async () => {
   const { listeners, puts } = worker();
+
   for (const path of ["/?code=unexpected", "/", "/other"]) {
     let response;
     const pending = [];
+
     listeners.fetch({
       request: {
         url: "https://planner.test" + path,

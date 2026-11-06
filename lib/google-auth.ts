@@ -8,6 +8,7 @@ export type GoogleAuthClient = {
     code: string,
   ) => Promise<{ data: { session: unknown }; error: unknown }>;
 };
+
 export async function startGoogleLogin(
   auth: GoogleAuthClient,
   origin: string,
@@ -20,6 +21,7 @@ export async function startGoogleLogin(
         queryParams: { prompt: "select_account" },
       },
     });
+
     if (error) throw error;
   } catch {
     throw new Error(
@@ -27,34 +29,44 @@ export async function startGoogleLogin(
     );
   }
 }
+
 // React Strict Mode can mount effects twice; an OAuth code is single-use.
 const pending = new WeakMap<GoogleAuthClient, Map<string, Promise<void>>>();
+
 export async function completeGoogleCallback(
   auth: GoogleAuthClient,
   href: string,
 ): Promise<void> {
   const url = new URL(href);
+
   if (url.searchParams.has("error"))
     throw new Error(
       url.searchParams.get("error") === "access_denied"
         ? "El acceso con Google fue cancelado. Podés intentarlo de nuevo o seguir sin cuenta."
         : "Google no pudo completar el acceso. Intentá nuevamente.",
     );
+
   const code = url.searchParams.get("code");
+
   if (!code)
     throw new Error(
       "No se recibió el código de acceso. Volvé a iniciar sesión.",
     );
+
   let exchanges = pending.get(auth);
+
   if (!exchanges) {
     exchanges = new Map();
     pending.set(auth, exchanges);
   }
+
   let exchange = exchanges.get(code);
+
   if (!exchange) {
     exchange = (async () => {
       try {
         const { data, error } = await auth.exchangeCodeForSession(code);
+
         if (error || !data.session) throw error;
       } catch {
         throw new Error(

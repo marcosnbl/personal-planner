@@ -3,6 +3,9 @@ import "./globals.css";
 import "./overrides.css";
 import "./discipline-summary.css";
 import "./theme.css";
+import { THEME_KEY } from "@/lib/training";
+
+const themeBootstrap = `(function(){var theme="light";try{if(localStorage.getItem(${JSON.stringify(THEME_KEY)})==="dark")theme="dark";}catch(error){}document.documentElement.dataset.theme=theme;})();`;
 
 export const metadata: Metadata = {
   title: "Training planner — Entrenamiento semanal",
@@ -18,14 +21,20 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#21211f",
+  themeColor: "#ffffff",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="es">
+    <html lang="es" suppressHydrationWarning>
+      <head>
+        <script
+          id="theme-bootstrap"
+          dangerouslySetInnerHTML={{ __html: themeBootstrap }}
+        />
+      </head>
       <body>{children}</body>
     </html>
   );

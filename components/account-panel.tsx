@@ -1,7 +1,9 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useAccount } from "./account-provider";
 import { startGoogleLogin } from "@/lib/google-auth";
+
 export function AccountPanel({
   pending,
   onContinueGuest,
@@ -12,15 +14,20 @@ export function AccountPanel({
   const { client, user, error } = useAccount();
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+
   useEffect(() => {
     const restore = () => setBusy(false);
+
     window.addEventListener("pageshow", restore);
+
     return () => window.removeEventListener("pageshow", restore);
   }, []);
+
   async function signIn() {
     if (!client || busy) return;
     setBusy(true);
     setMessage("");
+
     try {
       await startGoogleLogin(client.auth, window.location.origin);
     } catch (error) {
@@ -32,6 +39,7 @@ export function AccountPanel({
       setBusy(false);
     }
   }
+
   async function signOut() {
     if (!client || busy) return;
     if (
@@ -42,8 +50,10 @@ export function AccountPanel({
     )
       return;
     setBusy(true);
+
     try {
       const { error } = await client.auth.signOut({ scope: "local" });
+
       if (error) throw error;
     } catch {
       setMessage("No se pudo cerrar la sesión. Intentá nuevamente.");
@@ -51,6 +61,7 @@ export function AccountPanel({
       setBusy(false);
     }
   }
+
   return (
     <section className="account-panel">
       <h3>Tu entrenamiento, en cualquier dispositivo</h3>

@@ -1,6 +1,8 @@
 import type { CSSProperties } from "react";
+
 type Name =
   "sun" | "moon" | "settings" | "distance" | "time" | "elevation" | "sessions";
+
 const paths: Record<Name, string> = {
   sun: "M12 3v2m0 14v2M3 12h2m14 0h2M5.6 5.6 7 7m10 10 1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z",
   moon: "M20 14a8 8 0 0 1-10-10A8.5 8.5 0 1 0 20 14Z",
@@ -12,6 +14,7 @@ const paths: Record<Name, string> = {
   sessions:
     "M8 3v4m8-4v4M4 10h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Zm3 10 3 3 5-5",
 };
+
 export function Icon({ name, style }: { name: Name; style?: CSSProperties }) {
   return (
     <svg

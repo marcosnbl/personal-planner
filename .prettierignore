@@ -1,4 +1,11 @@
 .next/
 node_modules/
+/.agents/
+/_bmad/
+/_bmad-output/
 package-lock.json
 next-env.d.ts
+
+.features-gen/
+playwright-report/
+test-results/

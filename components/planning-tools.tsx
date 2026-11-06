@@ -1,5 +1,7 @@
 "use client";
+
 import { useState } from "react";
+import { useDialog } from "@/hooks/use-dialog";
 import {
   TYPE_INFO,
   emptyWorkout,
@@ -8,11 +10,13 @@ import {
   type Workout,
   type WorkoutTemplate,
 } from "@/lib/training";
+
 const suggestions = [
   { name: "Rodaje suave", km: 8, min: 50 },
   { name: "Series", km: 10, min: 60 },
   { name: "Long Run", km: 20, min: 120 },
 ];
+
 type Props = {
   weekStart: Date;
   count: number;
@@ -24,6 +28,7 @@ type Props = {
   onUse: (w: Workout) => void;
   onCopyWeek: (date: string) => void;
 };
+
 export function PlanningTools({
   weekStart,
   count,
@@ -38,6 +43,11 @@ export function PlanningTools({
   const [copyOpen, setCopyOpen] = useState(false);
   const [library, setLibrary] = useState(false);
   const [destination, setDestination] = useState("");
+  useDialog(() => {
+    setCopyOpen(false);
+    onClearSource();
+  }, copyOpen || !!source);
+
   return (
     <div className="planning-tools">
       <button
@@ -73,7 +83,10 @@ export function PlanningTools({
               </button>
               <button
                 aria-label={`Eliminar plantilla ${t.name}`}
-                onClick={() => onDeleteTemplate(t.id)}
+                onClick={() => {
+                  if (window.confirm(`¿Eliminar la plantilla “${t.name}”?`))
+                    onDeleteTemplate(t.id);
+                }}
               >
                 Eliminar
               </button>
@@ -157,10 +170,12 @@ export function PlanningTools({
             <form
               onSubmit={(e) => {
                 e.preventDefault();
+
                 const name = new FormData(e.currentTarget)
                   .get("name")
                   ?.toString()
                   .trim();
+
                 if (!name) return;
                 onSaveTemplate({
                   id: crypto.randomUUID(),

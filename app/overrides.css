@@ -2,6 +2,7 @@
   position: relative;
   overflow: hidden;
 }
+
 .week-picker input[type="date"] {
   position: absolute;
   inset: 0;
@@ -10,59 +11,72 @@
   opacity: 0;
   cursor: pointer;
 }
+
 .import-button {
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
+
 .day-card {
   border: 1px solid #26333e;
   color: var(--text);
   font: inherit;
   text-align: left;
 }
+
 .field > input,
 .field > select {
   height: 37px;
   padding: 0 10px;
 }
+
 .field > input,
 .field > select,
 .field textarea {
   font-size: 11px;
   letter-spacing: 0;
 }
+
 .field > select option {
   background: #16212c;
   color: #eaf0ee;
 }
+
 .settings-actions .secondary-button {
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .settings-actions label.secondary-button {
   margin: 0;
 }
+
 .quick-complete {
   flex-shrink: 0;
 }
+
 .empty-plan {
   grid-column: 1/-1;
 }
+
 .input-wrap input {
   flex: 1;
   width: 0;
 }
+
 .input-wrap > span {
   font-size: 8px;
 }
+
 .brand {
   font-size: 19px;
   letter-spacing: -0.8px;
   white-space: nowrap;
 }
+
 .mobile-brand {
   font-size: 14px;
   letter-spacing: -0.5px;
@@ -74,6 +88,7 @@
   height: 19px;
   display: block;
 }
+
 .mobile-brand .brand-mark svg {
   width: 16px;
   height: 16px;

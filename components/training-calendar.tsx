@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useRef, useState } from "react";
 import {
   dateKey,
@@ -20,6 +21,7 @@ type Props = {
   onDuplicate: (w: Workout) => void;
   onTemplate: (w: Workout) => void;
 };
+
 export function TrainingCalendar({
   dates,
   workouts,
@@ -40,28 +42,37 @@ export function TrainingCalendar({
     x: number;
     y: number;
   } | null>(null);
+
   const hit = (x: number, y: number) =>
     document.elementFromPoint(x, y)?.closest<HTMLElement>("[data-workout-date]")
       ?.dataset.workoutDate;
+
   const cancel = () => {
     pointer.current = null;
     setDragged(null);
     setTarget(null);
   };
+
   useEffect(() => {
     if (!dragged || !pointer.current) return;
+
     let frame: number;
+
     const tick = () => {
       const p = pointer.current;
+
       if (!p) return;
       if (p.y < 72) window.scrollBy(0, -12);
       else if (p.y > innerHeight - 72) window.scrollBy(0, 12);
       setTarget(hit(p.x, p.y) ?? null);
       frame = requestAnimationFrame(tick);
     };
+
     frame = requestAnimationFrame(tick);
+
     return () => cancelAnimationFrame(frame);
   }, [dragged]);
+
   return (
     <div
       className={`days-grid multi-calendar ${layout === "list" ? "list-mode" : ""}`}
@@ -70,6 +81,7 @@ export function TrainingCalendar({
         const key = dateKey(date);
         const all = workouts.filter((w) => w.date === key);
         const items = all.filter((w) => filter === "all" || w.type === filter);
+
         return (
           <section
             key={key}
@@ -88,9 +100,11 @@ export function TrainingCalendar({
             }}
             onDrop={(e) => {
               e.preventDefault();
+
               const id = e.dataTransfer.getData(
                 "application/x-training-planner",
               );
+
               if (id === dragged) onMove(id, key);
               cancel();
             }}
@@ -148,8 +162,11 @@ export function TrainingCalendar({
                     }}
                     onPointerUp={(e) => {
                       const p = pointer.current;
+
                       if (!p || p.pointerId !== e.pointerId) return;
+
                       const destination = hit(e.clientX, e.clientY);
+
                       cancel();
                       if (destination) onMove(p.id, destination);
                     }}

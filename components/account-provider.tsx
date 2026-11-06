@@ -1,4 +1,5 @@
 "use client";
+
 /* Hydrate the browser-only session after SSR; database permissions enforce ownership. */
 /* eslint-disable react-hooks/set-state-in-effect */
 import {
@@ -10,19 +11,23 @@ import {
 } from "react";
 import type { SupabaseClient, User } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase/client";
+
 type Account = {
   client: SupabaseClient | null;
   user: User | null;
   ready: boolean;
   error: string;
 };
+
 const Context = createContext<Account>({
   client: null,
   user: null,
   ready: false,
   error: "",
 });
+
 export const useAccount = () => useContext(Context);
+
 export function AccountProvider({ children }: { children: ReactNode }) {
   const [account, setAccount] = useState<Account>({
     client: null,
@@ -30,10 +35,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
     ready: false,
     error: "",
   });
+
   useEffect(() => {
     let active = true;
     let eventSeen = false;
     let client: SupabaseClient | null;
+
     try {
       client = getSupabase();
     } catch {
@@ -43,12 +50,16 @@ export function AccountProvider({ children }: { children: ReactNode }) {
         ready: true,
         error: "La configuración de Supabase no es válida. Revisá .env.local.",
       });
+
       return;
     }
+
     if (!client) {
       setAccount({ client: null, user: null, ready: true, error: "" });
+
       return;
     }
+
     const {
       data: { subscription },
     } = client.auth.onAuthStateChange((_event, session) => {
@@ -61,6 +72,7 @@ export function AccountProvider({ children }: { children: ReactNode }) {
           error: "",
         });
     });
+
     void client.auth
       .getSession()
       .then(({ data, error }) => {
@@ -83,10 +95,12 @@ export function AccountProvider({ children }: { children: ReactNode }) {
             error: "No se pudo recuperar la sesión.",
           });
       });
+
     return () => {
       active = false;
       subscription.unsubscribe();
     };
   }, []);
+
   return <Context.Provider value={account}>{children}</Context.Provider>;
 }
